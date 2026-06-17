@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+}
+
+enum ProductAvailability {
+  IN_STOCK
+  OUT_OF_STOCK
+  ON_REQUEST
+}
+
+enum DeliveryMethod {
+  DELIVERY
+  PICKUP
+}
+
+enum OrderStatus {
+  WHATSAPP_REDIRECTED
+}
+
+enum CartEventType {
+  PRODUCT_ADDED
+  PRODUCT_REMOVED
+  QUANTITY_UPDATED
+  CHECKOUT_STARTED
+  WHATSAPP_REDIRECT_CLICKED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(ADMIN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Brand {
+  id             String    @id @default(cuid())
+  name           String
+  slug           String    @unique
+  logoUrl        String?
+  description    String?
+  seoTitle       String?
+  seoDescription String?
+  displayOrder   Int       @default(0)
+  products       Product[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([displayOrder])
+}
+
+model Category {
+  id                  String     @id @default(cuid())
+  name                String
+  slug                String     @unique
+  parentId            String?
+  parent              Category?  @relation("CategoryChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  children            Category[] @relation("CategoryChildren")
+  description         String?
+  seoTitle            String?
+  seoDescription      String?
+  displayOrder        Int        @default(0)
+  products            Product[]  @relation("ProductCategory")
+  subcategoryProducts Product[]  @relation("ProductSubcategory")
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  @@index([parentId])
+  @@index([displayOrder])
+}
+
+model Product {
+  id               String              @id @default(cuid())
+  name             String
+  slug             String              @unique
+  brandId          String?
+  brand            Brand?              @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  categoryId       String?
+  category         Category?           @relation("ProductCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategoryId    String?
+  subcategory      Category?           @relation("ProductSubcategory", fields: [subcategoryId], references: [id], onDelete: SetNull)
+  sku              String?
+  shortDescription String?
+  fullDescription  String?
+  specifications   Json                @default("{}")
+  price            Decimal?            @db.Decimal(10, 2)
+  currency         String              @default("USD")
+  availability     ProductAvailability @default(ON_REQUEST)
+  images           ProductImage[]
+  featured         Boolean             @default(false)
+  published        Boolean             @default(true)
+  metaTitle        String?
+  metaDescription  String?
+  metaKeywords     String?
+  imageAltText     String?
+  productViews     ProductView[]
+  cartEvents       CartEvent[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([brandId])
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([featured])
+  @@index([published])
+  @@index([createdAt])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([position])
+}
+
+model Visitor {
+  id             String          @id @default(cuid())
+  sessionId      String          @unique
+  ipHash         String?
+  firstVisitAt   DateTime        @default(now())
+  lastVisitAt    DateTime        @default(now())
+  pageViewsCount Int             @default(0)
+  referrer       String?
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  browser        String?
+  deviceType     String?
+  operatingSystem String?
+  country        String?
+  city           String?
+  userAgent      String?
+  pageViews      PageView[]
+  productViews   ProductView[]
+  searchEvents   SearchEvent[]
+  cartEvents     CartEvent[]
+  orders         WhatsAppOrder[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([lastVisitAt])
+}
+
+model PageView {
+  id        String   @id @default(cuid())
+  visitorId String?
+  visitor   Visitor? @relation(fields: [visitorId], references: [id], onDelete: SetNull)
+  path      String
+  title     String?
+  createdAt DateTime @default(now())
+
+  @@index([visitorId])
+  @@index([path])
+  @@index([createdAt])
+}
+
+model ProductView {
+  id          String   @id @default(cuid())
+  visitorId   String?
+  visitor     Visitor? @relation(fields: [visitorId], references: [id], onDelete: SetNull)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productSlug String?
+  productName String?
+  createdAt   DateTime @default(now())
+
+  @@index([visitorId])
+  @@index([productId])
+  @@index([createdAt])
+}
+
+model SearchEvent {
+  id           String   @id @default(cuid())
+  visitorId    String?
+  visitor      Visitor? @relation(fields: [visitorId], references: [id], onDelete: SetNull)
+  term         String
+  resultsCount Int?
+  createdAt    DateTime @default(now())
+
+  @@index([visitorId])
+  @@index([term])
+  @@index([createdAt])
+}
+
+model CartEvent {
+  id          String        @id @default(cuid())
+  visitorId   String?
+  visitor     Visitor?      @relation(fields: [visitorId], references: [id], onDelete: SetNull)
+  productId   String?
+  product     Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName String?
+  eventType   CartEventType
+  quantity    Int?
+  metadata    Json          @default("{}")
+  createdAt   DateTime      @default(now())
+
+  @@index([visitorId])
+  @@index([productId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+model WhatsAppOrder {
+  id             String         @id @default(cuid())
+  visitorId      String?
+  visitor        Visitor?       @relation(fields: [visitorId], references: [id], onDelete: SetNull)
+  customerName   String
+  phone          String
+  address        String
+  deliveryMethod DeliveryMethod
+  notes          String?
+  cartItems      Json
+  total          Decimal?       @db.Decimal(10, 2)
+  currency       String         @default("USD")
+  status         OrderStatus    @default(WHATSAPP_REDIRECTED)
+  createdAt      DateTime       @default(now())
+
+  @@index([visitorId])
+  @@index([createdAt])
+}

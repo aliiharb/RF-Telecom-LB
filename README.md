@@ -1,36 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RF Telecom LB
 
-## Getting Started
+Full-stack storefront and admin dashboard for RF Telecom LB. Shoppers browse telecom and electronics products, add items to a local cart, enter order details, and send the order to WhatsApp. Admins manage catalog data, categories, brands, visitor analytics, and WhatsApp order records.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 App Router
+- React 19 and TypeScript
+- Tailwind CSS 4
+- PostgreSQL with Prisma ORM
+- Admin JWT cookie auth with bcrypt
+- Supabase fallback/catalog integration
+- Local product image uploads in `public/uploads/products`
+
+## Project Structure
+
+```text
+app/              Next.js routes, layouts, route handlers
+components/       Reusable UI and admin components
+lib/              Server/client utilities, catalog, auth, SEO, Prisma
+prisma/           Schema, migrations, seed script
+public/           Static assets and uploaded product images
+```
+
+## Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy the environment template:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+3. Update `.env`:
+
+```bash
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/rftelecomlb?sslmode=require"
+AUTH_SECRET="replace-with-a-long-random-secret"
+JWT_SECRET="replace-with-a-long-random-secret"
+WHATSAPP_ORDER_NUMBER="9611271999"
+NEXT_PUBLIC_STORE_WHATSAPP="9611271999"
+SITE_URL="http://localhost:3000"
+```
+
+4. Set admin accounts:
+
+```bash
+ADMIN_EMAIL="admin@rftelecomlb.com"
+ADMIN_PASSWORD="admin"
+ADMIN_ALI_EMAIL="ali@rftelecomlb.com"
+ADMIN_ALI_PASSWORD="admin"
+ADMIN_ZAHRAA_EMAIL="zahraa@rftelecomlb.com"
+ADMIN_ZAHRAA_PASSWORD="admin"
+```
+
+For production, use strong passwords or bcrypt hashes.
+
+5. Apply and seed the database:
+
+```bash
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+6. Start development:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Admin
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Login: `/admin/login`
+- Dashboard: `/admin`
+- Products: `/admin/products`
+- Add product: `/admin/products/new`
+- Categories: `/admin/categories`
+- Brands: `/admin/brands`
+- Visitors: `/admin/visitors`
+- WhatsApp orders: `/admin/orders`
 
-## Learn More
+Configured admin shortcuts:
 
-To learn more about Next.js, take a look at the following resources:
+- `ali` or `ali@rftelecomlb.com`
+- `zahraa` or `zahraa@rftelecomlb.com`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## WhatsApp Ordering
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The checkout form stores the country code separately from the local number. The local number is formatted as:
 
-## Deploy on Vercel
+```text
+XX XXX XXX
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Orders are sent to:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
++961 1 271 999
+```
+
+The app also attempts to save each WhatsApp redirect as a `WhatsAppOrder` record for admin tracking.
+
+## Common Commands
+
+```bash
+npm run dev
+npm run lint
+npm run build
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+## Notes
+
+- Do not commit `.env`.
+- Uploaded product images are stored under `public/uploads/products`.
+- The app can read catalog data from Prisma or Supabase fallback sources.
