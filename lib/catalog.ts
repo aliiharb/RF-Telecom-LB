@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import catalogSnapshot from "@/lib/catalog-snapshot.json";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import type { CatalogCollection } from "@/lib/site";
@@ -227,6 +228,12 @@ type SupabaseProductRow = {
     alt_text: string | null;
     position: number | null;
   }> | null;
+};
+
+const STATIC_CATALOG = catalogSnapshot as {
+  categories: CatalogCategory[];
+  products: CatalogProduct[];
+  brands: CatalogBrand[];
 };
 
 const CATEGORY_ORDER = [
@@ -562,6 +569,145 @@ function productMatchesBrandName(productName: string, brandName: string) {
   }
 
   return name.includes(brand);
+}
+
+function getStaticCategories() {
+  return sortCategoriesForMenu(
+    STATIC_CATALOG.categories.map((category) => ({
+      ...category,
+      children: category.children ? sortSubcategoriesForMenu(category.children) : [],
+    })),
+  );
+}
+
+function getStaticBrands() {
+  return [...STATIC_CATALOG.brands].sort(
+    (a, b) => (a.displayOrder || 0) - (b.displayOrder || 0) || a.name.localeCompare(b.name),
+  );
+}
+
+function productMatchesCategory(product: CatalogProduct, value?: string) {
+  if (!value) {
+    return true;
+  }
+
+  const lookup = [
+    ...categorySlugLookupValues(value),
+    value,
+  ].filter(Boolean);
+
+  return lookup.some(
+    (item) =>
+      product.category?.slug === item ||
+      product.category?.id === item ||
+      product.category?.categoryId === item ||
+      product.category?.name.toLowerCase() === item.toLowerCase(),
+  );
+}
+
+function productMatchesSubcategory(product: CatalogProduct, value?: string) {
+  if (!value) {
+    return true;
+  }
+
+  const lookup = [
+    ...subcategorySlugLookupValues(value),
+    value,
+  ].filter(Boolean);
+
+  return lookup.some(
+    (item) =>
+      product.subcategory?.slug === item ||
+      product.subcategory?.id === item ||
+      product.subcategory?.subcategoryId === item ||
+      product.collectionHandle === item ||
+      product.collectionSlug === item ||
+      product.subcategory?.name.toLowerCase() === item.toLowerCase(),
+  );
+}
+
+function getStaticProducts(options: ProductListOptions = {}) {
+  const search = normalizeSearch(options.search).toLowerCase();
+  const subcategorySearch = normalizeSearch(options.subcategorySearch).toLowerCase();
+  let products = STATIC_CATALOG.products.filter((product) => product.published !== false);
+
+  if (options.featured !== undefined) {
+    products = products.filter((product) => product.featured === options.featured);
+  }
+
+  if (options.categorySlug || options.categoryId) {
+    products = products.filter(
+      (product) =>
+        productMatchesCategory(product, options.categorySlug) ||
+        productMatchesCategory(product, options.categoryId),
+    );
+  }
+
+  if (options.subcategorySlug || options.subcategoryId) {
+    products = products.filter(
+      (product) =>
+        productMatchesSubcategory(product, options.subcategorySlug) ||
+        productMatchesSubcategory(product, options.subcategoryId),
+    );
+  }
+
+  if (options.collectionSlug) {
+    products = products.filter(
+      (product) =>
+        productMatchesSubcategory(product, options.collectionSlug) ||
+        product.category?.slug === options.collectionSlug,
+    );
+  }
+
+  if (options.brandSlug) {
+    const brandName = slugToBrand(options.brandSlug) || options.brandSlug;
+    products = products.filter((product) => productMatchesBrandName(product.name, brandName));
+  }
+
+  if (options.minPrice || options.maxPrice) {
+    products = products.filter((product) => {
+      const price = product.price;
+      if (price === null || price === undefined) {
+        return false;
+      }
+
+      return (
+        (!options.minPrice || price >= Number(options.minPrice)) &&
+        (!options.maxPrice || price <= Number(options.maxPrice))
+      );
+    });
+  }
+
+  if (subcategorySearch) {
+    products = products.filter(
+      (product) =>
+        product.name.toLowerCase().includes(subcategorySearch) ||
+        product.category?.name.toLowerCase().includes(subcategorySearch) ||
+        product.subcategory?.name.toLowerCase().includes(subcategorySearch),
+    );
+  }
+
+  if (search) {
+    products = products.filter(
+      (product) =>
+        product.name.toLowerCase().includes(search) ||
+        product.sku?.toLowerCase().includes(search) ||
+        product.category?.name.toLowerCase().includes(search) ||
+        product.subcategory?.name.toLowerCase().includes(search) ||
+        product.collectionHandle?.toLowerCase().includes(search),
+    );
+  }
+
+  products = [...products].sort(
+    options.sort === "name-az"
+      ? (a, b) => a.name.localeCompare(b.name)
+      : (a, b) =>
+          (a.category?.name || "").localeCompare(b.category?.name || "") ||
+          (a.subcategory?.name || "").localeCompare(b.subcategory?.name || "") ||
+          a.name.localeCompare(b.name),
+  );
+
+  return options.take ? products.slice(0, options.take) : products;
 }
 
 function makeCategory(row: Pick<Category, "id" | "name">, displayOrder = 0): CatalogCategory {
@@ -1251,7 +1397,8 @@ export async function getProducts(options: ProductListOptions = {}) {
   }
 
   const rows = await fetchAllCatalogRows();
-  return filterRows(rows, options).map(mapCatalogProduct);
+  const catalogProducts = filterRows(rows, options).map(mapCatalogProduct);
+  return catalogProducts.length ? catalogProducts : getStaticProducts(options);
 }
 
 export async function searchCatalog(query: string, take?: number) {
@@ -1292,10 +1439,11 @@ export async function searchCatalog(query: string, take?: number) {
 
   if (error) {
     catalogError("Failed to search product_catalog_view.", error);
-    return [];
+    return getStaticProducts({ search: term, take });
   }
 
-  return ((data || []) as ProductCatalogItem[]).map(mapCatalogProduct);
+  const products = ((data || []) as ProductCatalogItem[]).map(mapCatalogProduct);
+  return products.length ? products : getStaticProducts({ search: term, take });
 }
 
 export async function getCategories() {
@@ -1304,6 +1452,10 @@ export async function getCategories() {
   }
 
   const [categories, subcategories] = await Promise.all([fetchCategories(), fetchSubcategories()]);
+  if (!categories.length) {
+    return getStaticCategories();
+  }
+
   const byId = new Map(categories.map((category, index) => [category.id, makeCategory(category, index + 1)]));
 
   for (const [index, subcategory] of subcategories.entries()) {
@@ -1318,7 +1470,8 @@ export async function getCategories() {
     ]);
   }
 
-  return sortCategoriesForMenu([...byId.values()]);
+  const mappedCategories = sortCategoriesForMenu([...byId.values()]);
+  return mappedCategories.length ? mappedCategories : getStaticCategories();
 }
 
 export async function getAllCategoriesFlat() {
@@ -1435,10 +1588,11 @@ export async function getProductsByCollection(collectionHandle: string) {
 
   if (error) {
     catalogError(`Failed to load products for collection ${collectionHandle}.`, error);
-    return [];
+    return getStaticProducts({ collectionSlug: collectionHandle });
   }
 
-  return ((data || []) as ProductCatalogItem[]).map(mapCatalogProduct);
+  const products = ((data || []) as ProductCatalogItem[]).map(mapCatalogProduct);
+  return products.length ? products : getStaticProducts({ collectionSlug: collectionHandle });
 }
 
 export async function getProductBySlug(slug: string) {
@@ -1557,8 +1711,11 @@ export async function getBrands(): Promise<CatalogBrand[]> {
   }
 
   const rows = await fetchAllCatalogRows();
+  if (!rows.length) {
+    return getStaticBrands();
+  }
 
-  return BRANDS.filter((brand) => rows.some((row) => productMatchesBrandName(row.product_name, brand))).map(
+  const brands = BRANDS.filter((brand) => rows.some((row) => productMatchesBrandName(row.product_name, brand))).map(
     (brand, index) => ({
       id: brandToSlug(brand),
       name: brand,
@@ -1569,6 +1726,8 @@ export async function getBrands(): Promise<CatalogBrand[]> {
       seoDescription: `${brand} products available from RF Telecom LB.`,
     }),
   );
+
+  return brands.length ? brands : getStaticBrands();
 }
 
 export async function getBrandBySlug(slug: string): Promise<CatalogBrand | null> {
@@ -1647,10 +1806,11 @@ export async function getProductsByBrandSlug(slug: string) {
 
   if (error) {
     catalogError(`Failed to load products for brand ${brand}.`, error);
-    return [];
+    return getStaticProducts({ brandSlug: slug });
   }
 
-  return ((data || []) as ProductCatalogItem[]).map(mapCatalogProduct);
+  const products = ((data || []) as ProductCatalogItem[]).map(mapCatalogProduct);
+  return products.length ? products : getStaticProducts({ brandSlug: slug });
 }
 
 export async function getCategoryAndDescendantIds(slug: string) {
