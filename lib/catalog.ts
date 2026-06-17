@@ -504,18 +504,37 @@ function toIsoString(value: Date | string) {
   return value instanceof Date ? value.toISOString() : value;
 }
 
+function hasConfiguredDatabaseUrl() {
+  return Boolean(process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("USER:PASSWORD"));
+}
+
+async function countPrismaCatalogRows(label: string, countRows: () => Promise<number>) {
+  if (!hasConfiguredDatabaseUrl()) {
+    return 0;
+  }
+
+  try {
+    return await countRows();
+  } catch (error) {
+    catalogError(`Prisma ${label} unavailable; falling back to external catalog data.`, error);
+    return 0;
+  }
+}
+
 async function hasPrismaCategories() {
-  prismaCategoryCount ??= await prisma.category.count();
+  prismaCategoryCount ??= await countPrismaCatalogRows("categories", () => prisma.category.count());
   return prismaCategoryCount > 0;
 }
 
 async function hasPrismaProducts() {
-  prismaProductCount ??= await prisma.product.count({ where: { published: true } });
+  prismaProductCount ??= await countPrismaCatalogRows("products", () =>
+    prisma.product.count({ where: { published: true } }),
+  );
   return prismaProductCount > 0;
 }
 
 async function hasPrismaBrands() {
-  prismaBrandCount ??= await prisma.brand.count();
+  prismaBrandCount ??= await countPrismaCatalogRows("brands", () => prisma.brand.count());
   return prismaBrandCount > 0;
 }
 
