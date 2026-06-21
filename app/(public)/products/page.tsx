@@ -42,7 +42,12 @@ export default async function ProductsPage({
   const search = typeof params.search === "string" ? params.search : "";
   const category = typeof params.category === "string" ? params.category : "";
   const categoryId = typeof params.category_id === "string" ? params.category_id : "";
-  const subcategory = typeof params.subcategory === "string" ? params.subcategory : "";
+  const subcategory =
+    typeof params.subcategory === "string"
+      ? params.subcategory
+      : typeof params.subcategorySlug === "string"
+        ? params.subcategorySlug
+        : "";
   const subcategoryId = typeof params.subcategory_id === "string" ? params.subcategory_id : "";
   const collection = typeof params.collection === "string" ? params.collection : "";
   const brand = typeof params.brand === "string" ? params.brand : "";
@@ -56,7 +61,7 @@ export default async function ProductsPage({
       categoryId,
       subcategoryId,
       categorySlug: category,
-      subcategorySearch: subcategory,
+      subcategorySlug: subcategory,
       collectionSlug: collection,
       brandSlug: brand,
       minPrice,

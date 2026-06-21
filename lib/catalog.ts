@@ -342,6 +342,29 @@ const DATABASE_TAXONOMY = [
       { subcategoryId: "17", name: "TNC", slug: "tnc", aliases: [] },
     ],
   },
+  {
+    categoryId: "3",
+    name: "Cables",
+    slug: "cables",
+    aliases: [],
+    subcategories: [
+      {
+        subcategoryId: "18",
+        name: "Crimping Tools",
+        slug: "crimping-tools",
+        aliases: ["Cables_crimping_tool", "cables-crimping-tool", "crimping-tool"],
+      },
+      { subcategoryId: "19", name: "Fiber Optic Cables", slug: "fiber-optic-cables", aliases: [] },
+      { subcategoryId: "20", name: "HDMI Cables", slug: "hdmi-cables", aliases: [] },
+      { subcategoryId: "21", name: "Network Cables", slug: "network-cables", aliases: [] },
+      { subcategoryId: "22", name: "Network Cables Accessories", slug: "network-cables-accessories", aliases: [] },
+      { subcategoryId: "23", name: "Power Cables", slug: "power-cables", aliases: [] },
+      { subcategoryId: "24", name: "RF Cables", slug: "rf-cables", aliases: [] },
+      { subcategoryId: "25", name: "Telephone Cables", slug: "telephone-cables", aliases: [] },
+      { subcategoryId: "26", name: "Telephone Cable Accessories", slug: "telephone-cable-accessories", aliases: [] },
+      { subcategoryId: "27", name: "VGA Cables", slug: "vga-cables", aliases: [] },
+    ],
+  },
 ];
 
 let prismaCategoryCount: number | null = null;
@@ -1294,12 +1317,22 @@ function buildPrismaProductWhere(options: ProductListOptions = {}) {
   ].filter((value, index, values) => value && values.indexOf(value) === index);
 
   if (categoryLookup.length) {
-    and.push({ OR: categoryLookup.map((slug) => ({ category: { slug } })) });
+    and.push({
+      OR: [
+        ...(options.categoryId ? [{ categoryId: options.categoryId }, { category: { id: options.categoryId } }] : []),
+        ...categoryLookup.map((slug) => ({ category: { slug } })),
+      ],
+    });
   }
 
   if (subcategoryLookup.length) {
     and.push({
-      OR: subcategoryLookup.flatMap((slug) => [{ subcategory: { slug } }, { subcategoryId: slug }]),
+      OR: [
+        ...(options.subcategoryId
+          ? [{ subcategoryId: options.subcategoryId }, { subcategory: { id: options.subcategoryId } }]
+          : []),
+        ...subcategoryLookup.map((slug) => ({ subcategory: { slug } })),
+      ],
     });
   }
 
@@ -1308,7 +1341,6 @@ function buildPrismaProductWhere(options: ProductListOptions = {}) {
       OR: [
         { subcategory: { slug: options.collectionSlug } },
         { subcategoryId: options.collectionSlug },
-        { category: { slug: options.collectionSlug } },
       ],
     });
   }

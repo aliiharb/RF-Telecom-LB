@@ -2,32 +2,36 @@
 @import "tailwindcss";
 
 :root {
-  --color-bg: #f7f9fc;
+  --color-bg: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-2: #eef3fa;
-  --color-border: #dfe6ef;
-  --color-accent: #0068d9;
-  --color-accent-dim: #0052ad;
+  --color-surface-2: #f7f7f7;
+  --color-border: #dddddd;
+  --color-accent: #ff385c;
+  --color-accent-dim: #e61e4d;
+  --color-accent-active: #d70466;
+  --color-secondary-accent: #00a699;
   --color-success: #15803d;
   --color-warning: #b45309;
-  --color-danger: #dc2626;
-  --color-text-1: #111827;
-  --color-text-2: #667085;
-  --color-text-3: #8a94a6;
-  --color-header: rgba(255, 255, 255, 0.88);
+  --color-danger: #c13515;
+  --color-text-1: #222222;
+  --color-text-2: #717171;
+  --color-text-3: #9b9b9b;
+  --color-header: rgba(255, 255, 255, 0.94);
   --color-header-strong: rgba(255, 255, 255, 0.96);
-  --color-overlay: rgba(247, 249, 252, 0.97);
-  --color-hero-bg: linear-gradient(135deg, #f7f9fc 0%, #ffffff 100%);
+  --color-overlay: rgba(255, 255, 255, 0.92);
+  --color-hero-bg: #ffffff;
   --color-hero-overlay: rgba(4, 12, 24, 0.5);
   --color-stock-overlay: rgba(17, 24, 39, 0.5);
-  --color-accent-soft: rgba(0, 104, 217, 0.1);
-  --shadow-header: 0 8px 24px rgba(15, 23, 42, 0.08);
-  --shadow-menu: 0 20px 60px rgba(15, 23, 42, 0.14);
-  --shadow-accent: 0 12px 32px rgba(0, 104, 217, 0.14);
+  --color-accent-soft: rgba(255, 56, 92, 0.1);
+  --shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-header: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-menu: 0 8px 28px rgba(0, 0, 0, 0.15);
+  --shadow-floating: 0 8px 28px rgba(0, 0, 0, 0.15);
+  --shadow-accent: 0 6px 16px rgba(0, 0, 0, 0.12);
   --max-width: 1280px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
   --text-xs: 12px;
   --text-sm: 14px;
   --text-base: 16px;
@@ -42,28 +46,32 @@
 }
 
 html[data-theme="dark"] {
-  --color-bg: #111827;
-  --color-surface: #151e2c;
-  --color-surface-2: #1d2939;
-  --color-border: rgba(255, 255, 255, 0.11);
-  --color-accent: #4a9eff;
-  --color-accent-dim: #2e7bd5;
+  --color-bg: #121212;
+  --color-surface: #1f1f1f;
+  --color-surface-2: #2b2b2b;
+  --color-border: rgba(255, 255, 255, 0.16);
+  --color-accent: #ff385c;
+  --color-accent-dim: #e61e4d;
+  --color-accent-active: #d70466;
+  --color-secondary-accent: #00a699;
   --color-success: #22c55e;
   --color-warning: #f59e0b;
-  --color-danger: #f87171;
-  --color-text-1: #f8fafc;
-  --color-text-2: #b7c0ce;
-  --color-text-3: #7f8a9b;
-  --color-header: rgba(17, 24, 39, 0.88);
-  --color-header-strong: rgba(17, 24, 39, 0.96);
-  --color-overlay: rgba(17, 24, 39, 0.97);
-  --color-hero-bg: linear-gradient(135deg, #111827 0%, #151e2c 100%);
+  --color-danger: #ff8a73;
+  --color-text-1: #f7f7f7;
+  --color-text-2: #c7c7c7;
+  --color-text-3: #9b9b9b;
+  --color-header: rgba(18, 18, 18, 0.9);
+  --color-header-strong: rgba(18, 18, 18, 0.96);
+  --color-overlay: rgba(18, 18, 18, 0.92);
+  --color-hero-bg: #121212;
   --color-hero-overlay: rgba(0, 0, 0, 0.42);
   --color-stock-overlay: rgba(0, 0, 0, 0.52);
-  --color-accent-soft: rgba(74, 158, 255, 0.14);
-  --shadow-header: 0 8px 28px rgba(0, 0, 0, 0.2);
-  --shadow-menu: 0 20px 60px rgba(0, 0, 0, 0.36);
-  --shadow-accent: 0 12px 32px rgba(74, 158, 255, 0.12);
+  --color-accent-soft: rgba(255, 56, 92, 0.16);
+  --shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --shadow-header: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --shadow-menu: 0 8px 28px rgba(0, 0, 0, 0.42);
+  --shadow-floating: 0 8px 28px rgba(0, 0, 0, 0.42);
+  --shadow-accent: 0 6px 16px rgba(0, 0, 0, 0.34);
   --background: var(--color-bg);
   --foreground: var(--color-text-1);
   color-scheme: dark;
@@ -72,7 +80,7 @@ html[data-theme="dark"] {
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist);
+  --font-sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
@@ -83,7 +91,7 @@ html[data-theme="dark"] {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist), system-ui, sans-serif;
+  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -136,12 +144,12 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 8px;
+  border-radius: 9999px;
   background: var(--color-accent);
   color: #fff;
   padding: 12px 28px;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   transition: background 150ms, box-shadow 150ms, transform 100ms;
 }
 
@@ -157,7 +165,7 @@ textarea {
   align-items: center;
   justify-content: center;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 9999px;
   color: var(--color-text-2);
   padding: 0.625rem 1rem;
   font-size: 14px;
@@ -186,7 +194,7 @@ textarea {
 .input {
   width: 100%;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--color-surface);
   color: var(--color-text-1);
   padding: 10px 14px;
@@ -202,7 +210,7 @@ textarea {
 .input:focus {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.18);
 }
 
 .input.error {
@@ -287,8 +295,8 @@ textarea {
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 24px;
   padding: 24px 0;
 }
 
@@ -300,14 +308,46 @@ textarea {
   border-radius: 12px;
   background: var(--color-surface);
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-  transition: border-color 200ms, box-shadow 200ms, transform 150ms;
+  box-shadow: var(--shadow-rest);
+  transition: border-color 220ms ease, box-shadow 220ms ease, transform 180ms ease;
 }
 
 .product-card:hover {
-  border-color: var(--color-accent);
+  border-color: transparent;
   box-shadow: var(--shadow-accent);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
+}
+
+.header-search-submit {
+  background: var(--color-accent);
+}
+
+.header-search-submit:hover {
+  background: var(--color-accent-dim);
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroPhotoMove {
+  from {
+    opacity: 0.72;
+    transform: translateX(18px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
 }
 
 .mono-data {

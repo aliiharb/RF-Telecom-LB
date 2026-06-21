@@ -46,7 +46,7 @@ export function ProductFilters({
           {categories.map((category) => (
             <Link
               key={category.slug}
-              href={category.categoryId ? `/products?category_id=${category.categoryId}` : `/products?category=${category.slug}`}
+              href={`/products?category=${category.slug}`}
               className={clsx(
                 "filter-chip",
                 searchParams.category === category.slug ||
@@ -61,12 +61,6 @@ export function ProductFilters({
         </div>
       </div>
 
-      {searchParams.collection ? <input type="hidden" name="collection" value={searchParams.collection} /> : null}
-      {searchParams.subcategory ? <input type="hidden" name="subcategory" value={searchParams.subcategory} /> : null}
-      {searchParams.category_id ? <input type="hidden" name="category_id" value={searchParams.category_id} /> : null}
-      {searchParams.subcategory_id ? (
-        <input type="hidden" name="subcategory_id" value={searchParams.subcategory_id} />
-      ) : null}
       <input
         name="search"
         defaultValue={searchParams.search}
@@ -86,8 +80,8 @@ export function ProductFilters({
         ))}
       </select>
       <select
-        name="collection"
-        defaultValue={searchParams.collection || ""}
+        name="subcategory"
+        defaultValue={searchParams.subcategory || searchParams.collection || ""}
         className="input h-11"
       >
         <option value="">{activeCategory ? `All ${activeCategory.name}` : "All subcategories"}</option>
