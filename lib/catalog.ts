@@ -354,18 +354,156 @@ const DATABASE_TAXONOMY = [
         slug: "crimping-tools",
         aliases: ["Cables_crimping_tool", "cables-crimping-tool", "crimping-tool"],
       },
-      { subcategoryId: "19", name: "Fiber Optic Cables", slug: "fiber-optic-cables", aliases: [] },
+      {
+        subcategoryId: "19",
+        name: "Fiber Optic Cables",
+        slug: "fiber-optic-cables",
+        aliases: ["fiber-optic-cable", "Cables_fiber_optic_cable", "cables-fiber-optic-cable"],
+      },
       { subcategoryId: "20", name: "HDMI Cables", slug: "hdmi-cables", aliases: [] },
-      { subcategoryId: "21", name: "Network Cables", slug: "network-cables", aliases: [] },
+      {
+        subcategoryId: "21",
+        name: "Network Cables",
+        slug: "network-cables",
+        aliases: ["network-cable", "Cables_network_cable", "cables-network-cable"],
+      },
       { subcategoryId: "22", name: "Network Cables Accessories", slug: "network-cables-accessories", aliases: [] },
       { subcategoryId: "23", name: "Power Cables", slug: "power-cables", aliases: [] },
-      { subcategoryId: "24", name: "RF Cables", slug: "rf-cables", aliases: [] },
+      {
+        subcategoryId: "24",
+        name: "RF Cables",
+        slug: "rf-cables",
+        aliases: ["rf-cable", "Cables_rf_cable", "cables-rf-cable"],
+      },
       { subcategoryId: "25", name: "Telephone Cables", slug: "telephone-cables", aliases: [] },
       { subcategoryId: "26", name: "Telephone Cable Accessories", slug: "telephone-cable-accessories", aliases: [] },
-      { subcategoryId: "27", name: "VGA Cables", slug: "vga-cables", aliases: [] },
+      {
+        subcategoryId: "27",
+        name: "VGA Cables",
+        slug: "vga-cables",
+        aliases: ["vga-cable", "Cables_vga_cable", "cables-vga-cable"],
+      },
+    ],
+  },
+  {
+    categoryId: "4",
+    name: "Security",
+    slug: "security",
+    aliases: [],
+    subcategories: [
+      { subcategoryId: "29", name: "CCTV", slug: "cctv", aliases: ["Security_CCTV", "security-cctv"] },
+      { subcategoryId: "30", name: "Door Lock", slug: "door-lock", aliases: ["Security_door_lock", "security-door-lock"] },
+      { subcategoryId: "31", name: "Door Viewer", slug: "door-viewer", aliases: ["Security_door_viewer", "security-door-viewer"] },
+      {
+        subcategoryId: "32",
+        name: "Remote and Receiver",
+        slug: "remote-and-receiver",
+        aliases: ["Security_remote_and_receiver", "security-remote-and-receiver"],
+      },
+      {
+        subcategoryId: "33",
+        name: "Signal Blocking",
+        slug: "signal-blocking",
+        aliases: ["Security_signal_blocking", "security-signal-blocking"],
+      },
+      { subcategoryId: "34", name: "Spy Camera", slug: "spy-camera", aliases: ["Security_spy_camera", "security-spy-camera"] },
+      {
+        subcategoryId: "35",
+        name: "Voice Recorder",
+        slug: "voice-recorder",
+        aliases: ["Security_voice_recorder", "security-voice-recorder"],
+      },
+    ],
+  },
+  {
+    categoryId: "5",
+    name: "Testing and Measurement Tools",
+    slug: "testing-and-measurement-tools",
+    aliases: ["testing-measurement-tools"],
+    subcategories: [
+      {
+        subcategoryId: "36",
+        name: "Thermostat and AC Control",
+        slug: "thermostat-and-ac-control",
+        aliases: ["Testing_and_Measurement_Tools_thermostat_and_ac_control", "thermostat-ac-control"],
+      },
+      {
+        subcategoryId: "37",
+        name: "Liquid Level Meter",
+        slug: "liquid-level-meter",
+        aliases: ["Testing_and_Measurement_Tools_liquid_level_meter"],
+      },
+      {
+        subcategoryId: "38",
+        name: "Cable Testing",
+        slug: "cable-testing",
+        aliases: ["Testing_and_Measurement_Tools_cable_testing"],
+      },
+      { subcategoryId: "39", name: "UNI-T", slug: "uni-t", aliases: ["Testing_and_Measurement_Tools_uni_t", "unit"] },
+      {
+        subcategoryId: "40",
+        name: "Solar Testing",
+        slug: "solar-testing",
+        aliases: ["Testing_and_Measurement_Tools_solar_testing"],
+      },
+    ],
+  },
+  {
+    categoryId: "6",
+    name: "Electric Equipment",
+    slug: "electric-equipment",
+    aliases: ["electric-equipment"],
+    subcategories: [
+      { subcategoryId: "41", name: "Adapters", slug: "adapters", aliases: ["Electric_Equipment_adapters"] },
+      { subcategoryId: "42", name: "AEG Lamp", slug: "aeg-lamp", aliases: ["Electric_Equipment_aeg_lamp"] },
+      { subcategoryId: "43", name: "Backup", slug: "backup", aliases: ["Electric_Equipment_backup"] },
+      {
+        subcategoryId: "44",
+        name: "Delta Stabilizers",
+        slug: "delta-stabilizers",
+        aliases: ["Electric_Equipment_delta_stabilizers"],
+      },
+      { subcategoryId: "45", name: "Electrics", slug: "electrics", aliases: ["Electric_Equipment_electrics"] },
+      {
+        subcategoryId: "46",
+        name: "Metas Stabilizers",
+        slug: "metas-stabilizers",
+        aliases: ["Electric_Equipment_metas_stabilizers"],
+      },
+      { subcategoryId: "47", name: "Power Supply", slug: "power-supply", aliases: ["Electric_Equipment_power_supply"] },
+      {
+        subcategoryId: "48",
+        name: "Solar Inverters",
+        slug: "solar-inverters",
+        aliases: ["Electric_Equipment_solar_inverters"],
+      },
+    ],
+  },
+  {
+    categoryId: "7",
+    name: "Electronics",
+    slug: "electronics",
+    aliases: [],
+    subcategories: [
+      { subcategoryId: "50", name: "Batteries", slug: "batteries", aliases: ["Electronics_batteries"] },
+      { subcategoryId: "51", name: "Converters", slug: "converters", aliases: ["Electronics_converters"] },
+      { subcategoryId: "52", name: "Solar Batteries", slug: "solar-batteries", aliases: ["Electronics_solar_batteries"] },
     ],
   },
 ];
+
+const SUPABASE_TITLE_FILTER_SUBCATEGORIES: Record<string, string[]> = {
+  "18": ["crimping tool"],
+  "19": ["fiber optic cable", "fiber patch cord"],
+  "20": ["cable hdmi"],
+  "21": ["cable network"],
+  "22": ["rj45 female", "plug rj45"],
+  "23": ["power cable"],
+  "24": ["cable rg"],
+  "25": ["telephone cord", "telephone flat cable"],
+  "26": ["telephone plug", "telephone line splitter"],
+  "27": ["cable vga"],
+};
 
 let prismaCategoryCount: number | null = null;
 let prismaProductCount: number | null = null;
@@ -968,6 +1106,65 @@ function mapSupabaseProduct(row: SupabaseProductRow): CatalogProduct {
   };
 }
 
+function applySupabaseTitleSubcategoryOverride(
+  products: CatalogProduct[],
+  mapping: ReturnType<typeof findDatabaseSubcategory>,
+  terms: string[],
+) {
+  if (!mapping) {
+    return products;
+  }
+
+  const normalizedTerms = terms.map((term) => term.toLowerCase());
+  const category: CatalogCategory = {
+    id: mapping.category.categoryId,
+    name: mapping.category.name,
+    slug: mapping.category.slug,
+    categoryId: mapping.category.categoryId,
+    subcategoryId: null,
+    collectionHandle: null,
+    fullPath: mapping.category.name,
+    depth: 0,
+    parentId: null,
+    children: [],
+    description: `${mapping.category.name} products available from RF Telecom LB in Lebanon.`,
+    seoTitle: `${mapping.category.name} in Lebanon`,
+    seoDescription: `${mapping.category.name} products available from RF Telecom LB in Lebanon.`,
+  };
+  const subcategory: CatalogCategory = {
+    id: mapping.subcategory.subcategoryId,
+    name: mapping.subcategory.name,
+    slug: mapping.subcategory.slug,
+    categoryId: mapping.category.categoryId,
+    subcategoryId: mapping.subcategory.subcategoryId,
+    collectionHandle: mapping.subcategory.slug,
+    fullPath: `${mapping.category.name} > ${mapping.subcategory.name}`,
+    depth: 1,
+    parentId: category.id,
+    parent: { ...category, children: undefined },
+    children: [],
+    description: `${mapping.subcategory.name} products in ${mapping.category.name} available from RF Telecom LB in Lebanon.`,
+    seoTitle: `${mapping.subcategory.name} in Lebanon`,
+    seoDescription: `${mapping.subcategory.name} products in ${mapping.category.name} available from RF Telecom LB in Lebanon.`,
+  };
+
+  return products
+    .filter((product) => normalizedTerms.some((term) => product.name.toLowerCase().includes(term)))
+    .map((product) => ({
+      ...product,
+      category,
+      subcategory,
+      collection: category.name,
+      collectionHandle: subcategory.collectionHandle,
+      collectionSlug: subcategory.slug,
+      specifications: {
+        ...product.specifications,
+        Category: category.name,
+        Subcategory: subcategory.name,
+      },
+    }));
+}
+
 function rowMatchesCategory(row: ProductCatalogItem, value?: string) {
   if (!value) {
     return true;
@@ -1051,8 +1248,9 @@ async function fetchSupabaseProducts(options: ProductListOptions = {}) {
   const subcategoryId =
     subcategoryMapping?.subcategory.subcategoryId ||
     (options.subcategoryId && /^\d+$/.test(options.subcategoryId) ? options.subcategoryId : null);
+  const titleOverrideTerms = subcategoryId ? SUPABASE_TITLE_FILTER_SUBCATEGORIES[subcategoryId] : null;
 
-  if (subcategoryId) {
+  if (subcategoryId && !titleOverrideTerms) {
     const { data: productLinks, error: productLinksError } = await supabase
       .from("product_subcategories")
       .select("product_id")
@@ -1096,9 +1294,13 @@ async function fetchSupabaseProducts(options: ProductListOptions = {}) {
 
   let products = ((data || []) as SupabaseProductRow[]).map(mapSupabaseProduct);
 
-  if (categoryMapping) {
+  if (titleOverrideTerms) {
+    products = applySupabaseTitleSubcategoryOverride(products, subcategoryMapping, titleOverrideTerms);
+  }
+
+  if (!titleOverrideTerms && categoryMapping) {
     products = products.filter((product) => product.category?.categoryId === categoryMapping.categoryId);
-  } else if (options.categoryId) {
+  } else if (!titleOverrideTerms && options.categoryId) {
     products = products.filter((product) => product.category?.categoryId === options.categoryId);
   }
 
