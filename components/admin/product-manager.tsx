@@ -31,13 +31,28 @@ const emptyForm: ProductFormState = {
   weight: "",
   color: "",
   sku: "",
-  status: "draft",
+  status: "active",
   brandId: "",
   specPdfUrl: "",
   images: [],
   categoryId: "",
   subcategoryIds: [],
 };
+
+const colorOptions = [
+  { name: "Black", swatch: "#18181b", border: "border-zinc-300" },
+  { name: "White", swatch: "#ffffff", border: "border-zinc-300" },
+  { name: "Gray", swatch: "#71717a", border: "border-zinc-300" },
+  { name: "Silver", swatch: "#d4d4d8", border: "border-zinc-300" },
+  { name: "Red", swatch: "#dc2626", border: "border-red-200" },
+  { name: "Orange", swatch: "#f97316", border: "border-orange-200" },
+  { name: "Yellow", swatch: "#facc15", border: "border-yellow-200" },
+  { name: "Green", swatch: "#16a34a", border: "border-green-200" },
+  { name: "Blue", swatch: "#2563eb", border: "border-blue-200" },
+  { name: "Purple", swatch: "#9333ea", border: "border-purple-200" },
+  { name: "Brown", swatch: "#92400e", border: "border-amber-300" },
+  { name: "Gold", swatch: "#d97706", border: "border-amber-200" },
+];
 
 function productToForm(product: AdminManagedProduct, categories: AdminCategoryOption[]): ProductFormState {
   const categoryId =
@@ -349,14 +364,41 @@ export function ProductManager({
               {errors.weight ? <span className="text-xs text-red-600">{errors.weight}</span> : null}
             </label>
 
-            <label className="grid gap-1.5 text-sm font-medium text-zinc-700">
+            <div className="grid gap-2 text-sm font-medium text-zinc-700">
               Color
-              <input
-                value={form.color}
-                onChange={(event) => updateForm({ color: event.target.value })}
-                className="h-11 rounded-xl border border-zinc-200 px-3 outline-none focus:border-sky-500"
-              />
-            </label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <button
+                  type="button"
+                  onClick={() => updateForm({ color: "" })}
+                  className={`h-11 rounded-xl border px-3 text-left text-sm font-semibold transition ${
+                    !form.color
+                      ? "border-sky-500 bg-sky-50 text-sky-800"
+                      : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300"
+                  }`}
+                >
+                  No color
+                </button>
+                {colorOptions.map((color) => (
+                  <button
+                    key={color.name}
+                    type="button"
+                    onClick={() => updateForm({ color: color.name })}
+                    className={`flex h-11 items-center gap-2 rounded-xl border px-3 text-left text-sm font-semibold transition ${
+                      form.color === color.name
+                        ? "border-sky-500 bg-sky-50 text-sky-800"
+                        : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300"
+                    }`}
+                  >
+                    <span
+                      className={`h-4 w-4 shrink-0 rounded-full border ${color.border}`}
+                      style={{ backgroundColor: color.swatch }}
+                      aria-hidden="true"
+                    />
+                    {color.name}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <label className="grid gap-1.5 text-sm font-medium text-zinc-700">
               Status
@@ -537,7 +579,9 @@ export function ProductManager({
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-sky-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:bg-sky-300"
+                className={`inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold text-white shadow-sm transition disabled:bg-zinc-300 ${
+                  form.id ? "bg-sky-600 hover:bg-sky-700" : "bg-emerald-600 hover:bg-emerald-700"
+                }`}
               >
                 {saving ? "Saving..." : form.id ? "Save changes" : "Create product"}
               </button>

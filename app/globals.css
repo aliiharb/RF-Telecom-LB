@@ -159,6 +159,27 @@ textarea {
   transform: translateY(-1px);
 }
 
+.admin-create-button {
+  display: inline-flex;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: #059669;
+  color: #ffffff;
+  padding: 0 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgb(5 150 105 / 0.18);
+  transition: background 150ms, transform 100ms, box-shadow 150ms;
+}
+
+.admin-create-button:hover {
+  background: #047857;
+  box-shadow: 0 10px 22px rgb(5 150 105 / 0.24);
+  transform: translateY(-1px);
+}
+
 .btn-ghost {
   display: inline-flex;
   min-height: 40px;

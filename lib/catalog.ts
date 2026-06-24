@@ -25,6 +25,7 @@ export const BRANDS = [
 export type Category = {
   id: string;
   name: string;
+  slug?: string | null;
   created_at?: string;
 };
 
@@ -32,6 +33,7 @@ export type Subcategory = {
   id: string;
   category_id: string;
   name: string;
+  slug?: string | null;
   collection_handle: string;
   created_at?: string;
 };
@@ -208,16 +210,25 @@ type SupabaseProductRow = {
   id: string;
   title: string;
   slug: string | null;
-  shopify_handle: string | null;
-  description_html: string | null;
+  description: string | null;
   price: number | null;
+  brand_id: number | string | null;
   sku: string | null;
-  published: boolean | null;
   status: string | null;
-  seo_title: string | null;
-  seo_description: string | null;
-  specs: unknown;
+  spec_pdf_url: string | null;
   created_at: string;
+  updated_at: string | null;
+  brands?: {
+    id: number | string;
+    name: string;
+    slug: string;
+    description?: string | null;
+  } | Array<{
+    id: number | string;
+    name: string;
+    slug: string;
+    description?: string | null;
+  }> | null;
   product_subcategories?: Array<{
     subcategory_id: number | string;
     subcategories?: SupabaseSubcategoryRelation | SupabaseSubcategoryRelation[] | null;
@@ -225,9 +236,16 @@ type SupabaseProductRow = {
   product_images?: Array<{
     id: string;
     url: string;
-    alt_text: string | null;
     position: number | null;
   }> | null;
+};
+
+type SupabaseBrandRow = {
+  id: number | string;
+  name: string;
+  slug: string;
+  description: string | null;
+  featured?: boolean | null;
 };
 
 const STATIC_CATALOG = catalogSnapshot as {
@@ -868,8 +886,8 @@ function getStaticProducts(options: ProductListOptions = {}) {
   return options.take ? products.slice(0, options.take) : products;
 }
 
-function makeCategory(row: Pick<Category, "id" | "name">, displayOrder = 0): CatalogCategory {
-  const slug = slugify(row.name);
+function makeCategory(row: Pick<Category, "id" | "name" | "slug">, displayOrder = 0): CatalogCategory {
+  const slug = row.slug || slugify(row.name);
 
   return withDatabaseTaxonomy({
     id: row.id,
@@ -887,11 +905,13 @@ function makeCategory(row: Pick<Category, "id" | "name">, displayOrder = 0): Cat
 }
 
 function makeSubcategory(row: Subcategory, parent: CatalogCategory, displayOrder = 0): CatalogCategory {
+  const slug = row.collection_handle || row.slug || slugify(row.name);
+
   return withDatabaseTaxonomy({
     id: row.id,
     name: row.name,
-    slug: row.collection_handle,
-    collectionHandle: row.collection_handle,
+    slug,
+    collectionHandle: slug,
     fullPath: `${parent.name} > ${row.name}`,
     depth: 1,
     parentId: parent.id,
@@ -1058,11 +1078,17 @@ function mapSupabaseProduct(row: SupabaseProductRow): CatalogProduct {
     },
     category,
   );
-  const slug = row.slug || row.shopify_handle || slugify(row.title || row.id);
-  const specifications =
-    row.specs && typeof row.specs === "object" && !Array.isArray(row.specs)
-      ? (row.specs as Record<string, string>)
-      : {};
+  const slug = row.slug || slugify(row.title || row.id);
+  const specifications: Record<string, string> = row.spec_pdf_url ? { "Spec sheet": row.spec_pdf_url } : {};
+  const brandRow = firstRelation(row.brands);
+  const brand = brandRow
+    ? {
+        id: String(brandRow.id),
+        name: brandRow.name,
+        slug: brandRow.slug,
+        description: brandRow.description || null,
+      }
+    : null;
 
   return {
     id: row.id,
@@ -1075,10 +1101,10 @@ function mapSupabaseProduct(row: SupabaseProductRow): CatalogProduct {
     collectionHandle: subcategory.slug,
     collection: category.name,
     collectionSlug: subcategory.slug,
-    brand: null,
+    brand,
     sku: row.sku,
     shortDescription: null,
-    fullDescription: row.description_html,
+    fullDescription: row.description,
     specifications,
     price: row.price,
     compareAtPrice: null,
@@ -1089,17 +1115,17 @@ function mapSupabaseProduct(row: SupabaseProductRow): CatalogProduct {
       .map((image) => ({
         id: image.id,
         url: image.url,
-        alt: image.alt_text,
+        alt: row.title,
         position: image.position || 0,
       })),
     featured: false,
-    published: Boolean(row.published),
-    metaTitle: row.seo_title,
-    metaDescription: row.seo_description,
+    published: row.status === "active",
+    metaTitle: row.title,
+    metaDescription: row.description,
     metaKeywords: null,
     imageAltText: row.title,
     createdAt: row.created_at,
-    updatedAt: row.created_at,
+    updatedAt: row.updated_at || row.created_at,
   };
 }
 
@@ -1250,16 +1276,36 @@ async function fetchSupabaseProducts(options: ProductListOptions = {}) {
   let productIds: string[] | null = null;
   const categoryMapping = findDatabaseCategory(options.categoryId || options.categorySlug);
   const subcategoryMapping = findDatabaseSubcategory(options.subcategoryId || options.subcategorySlug || options.collectionSlug);
-  const subcategoryId =
-    subcategoryMapping?.subcategory.subcategoryId ||
-    (options.subcategoryId && /^\d+$/.test(options.subcategoryId) ? options.subcategoryId : null);
-  const titleOverrideTerms = subcategoryId ? SUPABASE_TITLE_FILTER_SUBCATEGORIES[subcategoryId] : null;
+  const subcategoryLookup = options.subcategoryId || options.subcategorySlug || options.collectionSlug || null;
+  const legacySubcategoryId = subcategoryMapping?.subcategory.subcategoryId || null;
+  const titleOverrideTerms = legacySubcategoryId ? SUPABASE_TITLE_FILTER_SUBCATEGORIES[legacySubcategoryId] : null;
 
-  if (subcategoryId && !titleOverrideTerms) {
+  if (subcategoryLookup && !titleOverrideTerms) {
+    const lookupSlugs = [
+      subcategoryLookup,
+      ...subcategorySlugLookupValues(subcategoryLookup),
+    ].filter((value, index, values) => value && values.indexOf(value) === index);
+
+    const { data: subcategoryRows, error: subcategoryError } = await supabase
+      .from("subcategories")
+      .select("id,slug")
+      .or(`id.eq.${subcategoryLookup},slug.in.(${lookupSlugs.join(",")})`);
+
+    if (subcategoryError) {
+      catalogError("Failed to resolve Supabase subcategory.", subcategoryError);
+      return [];
+    }
+
+    const subcategoryIds = (subcategoryRows || []).map((subcategory) => String(subcategory.id));
+
+    if (!subcategoryIds.length) {
+      return [];
+    }
+
     const { data: productLinks, error: productLinksError } = await supabase
       .from("product_subcategories")
       .select("product_id")
-      .eq("subcategory_id", Number(subcategoryId));
+      .in("subcategory_id", subcategoryIds);
 
     if (productLinksError) {
       catalogError("Failed to load product subcategory links.", productLinksError);
@@ -1276,12 +1322,16 @@ async function fetchSupabaseProducts(options: ProductListOptions = {}) {
   let query = supabase
     .from("products")
     .select(
-      "id,title,slug,shopify_handle,description_html,price,sku,published,status,seo_title,seo_description,specs,created_at,product_subcategories(subcategory_id,subcategories(id,name,category_id,categories(id,name))),product_images(id,url,alt_text,position)",
+      "id,title,slug,description,price,brand_id,sku,status,spec_pdf_url,created_at,updated_at,brands(id,name,slug,description),product_subcategories(subcategory_id,subcategories(id,name,category_id,categories(id,name))),product_images(id,url,position)",
     )
-    .eq("published", true);
+    .eq("status", "active");
 
   if (productIds) {
     query = query.in("id", productIds);
+  }
+
+  if (options.brandSlug) {
+    query = query.eq("brands.slug", options.brandSlug);
   }
 
   if (options.sort === "name-az") {
@@ -1301,7 +1351,7 @@ async function fetchSupabaseProducts(options: ProductListOptions = {}) {
 
   if (titleOverrideTerms) {
     products = applySupabaseTitleSubcategoryOverride(products, subcategoryMapping, titleOverrideTerms);
-  } else if (subcategoryId && subcategoryMapping) {
+  } else if (subcategoryLookup && subcategoryMapping) {
     products = applySupabaseSubcategoryContext(products, subcategoryMapping);
   }
 
@@ -1341,6 +1391,10 @@ async function fetchSupabaseProducts(options: ProductListOptions = {}) {
     );
   }
 
+  if (options.brandSlug) {
+    products = products.filter((product) => product.brand?.slug === options.brandSlug);
+  }
+
   if (options.sort && options.sort !== "name-az") {
     products = products.sort(
       (a, b) =>
@@ -1353,6 +1407,35 @@ async function fetchSupabaseProducts(options: ProductListOptions = {}) {
   return options.take ? products.slice(0, options.take) : products;
 }
 
+async function fetchSupabaseBrands() {
+  const supabase = getSupabaseCatalogClient();
+
+  if (!supabase) {
+    catalogError("Supabase catalog client is not configured.");
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("brands")
+    .select("id,name,slug,description,featured")
+    .order("name", { ascending: true });
+
+  if (error) {
+    catalogError("Failed to load brands from Supabase brands.", error);
+    return [];
+  }
+
+  return ((data || []) as SupabaseBrandRow[]).map((brand, index) => ({
+    id: String(brand.id),
+    name: brand.name,
+    slug: brand.slug,
+    description: brand.description,
+    displayOrder: index + 1,
+    seoTitle: `${brand.name} Products in Lebanon`,
+    seoDescription: `${brand.name} products available from RF Telecom LB.`,
+  }));
+}
+
 async function fetchCategories() {
   const supabase = getSupabaseCatalogClient();
 
@@ -1363,7 +1446,7 @@ async function fetchCategories() {
 
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, created_at")
+    .select("id, name, slug, created_at")
     .order("name", { ascending: true });
 
   if (error) {
@@ -1384,7 +1467,7 @@ async function fetchSubcategories(categoryId?: string) {
 
   let query = supabase
     .from("subcategories")
-    .select("id, name, collection_handle, category_id, created_at")
+    .select("id, name, slug, category_id, created_at")
     .order("name", { ascending: true });
 
   if (categoryId) {
@@ -1398,7 +1481,10 @@ async function fetchSubcategories(categoryId?: string) {
     return [];
   }
 
-  return (data || []) as Subcategory[];
+  return ((data || []) as Array<Omit<Subcategory, "collection_handle">>).map((subcategory) => ({
+    ...subcategory,
+    collection_handle: subcategory.slug || slugify(subcategory.name),
+  }));
 }
 
 function filterRows(rows: ProductCatalogItem[], options: ProductListOptions) {
@@ -1692,31 +1778,34 @@ export async function searchCatalog(query: string, take?: number) {
 }
 
 export async function getCategories() {
+  const [categories, subcategories] = await Promise.all([fetchCategories(), fetchSubcategories()]);
+
+  if (categories.length) {
+    const byId = new Map(categories.map((category, index) => [String(category.id), makeCategory({ ...category, id: String(category.id) }, index + 1)]));
+
+    for (const [index, subcategory] of subcategories.entries()) {
+      const parent = byId.get(String(subcategory.category_id));
+      if (!parent) {
+        continue;
+      }
+
+      parent.children = sortSubcategoriesForMenu([
+        ...(parent.children || []),
+        makeSubcategory(subcategory, parent, index + 1),
+      ]);
+    }
+
+    const mappedCategories = sortCategoriesForMenu([...byId.values()]);
+    if (mappedCategories.length) {
+      return mappedCategories;
+    }
+  }
+
   if (await hasPrismaCategories()) {
     return getPrismaCategories();
   }
 
-  const [categories, subcategories] = await Promise.all([fetchCategories(), fetchSubcategories()]);
-  if (!categories.length) {
-    return getStaticCategories();
-  }
-
-  const byId = new Map(categories.map((category, index) => [category.id, makeCategory(category, index + 1)]));
-
-  for (const [index, subcategory] of subcategories.entries()) {
-    const parent = byId.get(subcategory.category_id);
-    if (!parent) {
-      continue;
-    }
-
-    parent.children = sortSubcategoriesForMenu([
-      ...(parent.children || []),
-      makeSubcategory(subcategory, parent, index + 1),
-    ]);
-  }
-
-  const mappedCategories = sortCategoriesForMenu([...byId.values()]);
-  return mappedCategories.length ? mappedCategories : getStaticCategories();
+  return getStaticCategories();
 }
 
 export async function getAllCategoriesFlat() {
@@ -1942,6 +2031,11 @@ export async function getCollections(): Promise<CatalogCollection[]> {
 }
 
 export async function getBrands(): Promise<CatalogBrand[]> {
+  const supabaseBrands = await fetchSupabaseBrands();
+  if (supabaseBrands.length) {
+    return supabaseBrands;
+  }
+
   if (await hasPrismaBrands()) {
     const brands = await prisma.brand.findMany({ orderBy: [{ displayOrder: "asc" }, { name: "asc" }] });
     return brands.map((brand) => ({
@@ -1976,6 +2070,11 @@ export async function getBrands(): Promise<CatalogBrand[]> {
 }
 
 export async function getBrandBySlug(slug: string): Promise<CatalogBrand | null> {
+  const supabaseBrand = (await fetchSupabaseBrands()).find((brand) => brand.slug === slug);
+  if (supabaseBrand) {
+    return supabaseBrand;
+  }
+
   if (await hasPrismaBrands()) {
     const brandRecord = await prisma.brand.findUnique({ where: { slug } });
     return brandRecord
@@ -2012,50 +2111,21 @@ export async function getProductsByBrandSlug(slug: string) {
     return getPrismaProducts({ brandSlug: slug });
   }
 
+  const supabaseProducts = await fetchSupabaseProducts({ brandSlug: slug });
+  if (supabaseProducts.length) {
+    return supabaseProducts;
+  }
+
   if (await hasAnyPrismaCatalogData()) {
     return [];
   }
 
   const brand = slugToBrand(slug);
-
   if (!brand) {
     return [];
   }
 
-  const supabase = getSupabaseCatalogClient();
-
-  if (!supabase) {
-    return getProducts({ brandSlug: slug });
-  }
-
-  if (brand === "British Telecom") {
-    const { data, error } = await supabase
-      .from("product_catalog_view")
-      .select("*")
-      .or("product_name.ilike.%British Telecom%,product_name.ilike.%BT%,product_name.ilike.%Telephone BT%")
-      .order("product_name", { ascending: true });
-
-    if (error) {
-      catalogError("Failed to load British Telecom products.", error);
-      return [];
-    }
-
-    return ((data || []) as ProductCatalogItem[]).map(mapCatalogProduct);
-  }
-
-  const { data, error } = await supabase
-    .from("product_catalog_view")
-    .select("*")
-    .ilike("product_name", `%${brand}%`)
-    .order("product_name", { ascending: true });
-
-  if (error) {
-    catalogError(`Failed to load products for brand ${brand}.`, error);
-    return getStaticProducts({ brandSlug: slug });
-  }
-
-  const products = ((data || []) as ProductCatalogItem[]).map(mapCatalogProduct);
-  return products.length ? products : getStaticProducts({ brandSlug: slug });
+  return getStaticProducts({ brandSlug: slug });
 }
 
 export async function getCategoryAndDescendantIds(slug: string) {

@@ -107,7 +107,7 @@ export function SimpleCatalogForm({
       ) : null}
       {error ? <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
       {message ? <p className="rounded-xl bg-sky-50 p-3 text-sm text-sky-700">{message}</p> : null}
-      <button type="submit" className="h-11 rounded-xl bg-sky-600 px-5 text-sm font-semibold text-white hover:bg-sky-700">
+      <button type="submit" className="admin-create-button">
         Save
       </button>
     </form>
