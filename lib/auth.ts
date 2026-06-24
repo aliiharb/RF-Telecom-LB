@@ -29,6 +29,7 @@ export type EnvAdminAccount = {
   email: string;
   password: string;
   passwordHash: string;
+  aliases?: string[];
 };
 
 export function getEnvAdminAccounts(): EnvAdminAccount[] {
@@ -43,6 +44,7 @@ export function getEnvAdminAccounts(): EnvAdminAccount[] {
       email: "rftelecomlb.com",
       password: "admin",
       passwordHash: "",
+      aliases: ["admin"],
     },
     {
       id: "ali",
@@ -77,7 +79,8 @@ export function findEnvAdminAccount(identifier: string) {
     (account) =>
       account.email === normalized ||
       account.id === normalized ||
-      account.name.toLowerCase() === normalized,
+      account.name.toLowerCase() === normalized ||
+      account.aliases?.some((alias) => normalizeEmail(alias) === normalized),
   );
 }
 
