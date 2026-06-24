@@ -497,9 +497,6 @@ const SUPABASE_TITLE_FILTER_SUBCATEGORIES: Record<string, string[]> = {
   "19": ["fiber optic cable", "fiber patch cord"],
   "20": ["cable hdmi"],
   "21": ["cable network"],
-  "22": ["rj45 female", "plug rj45"],
-  "23": ["power cable"],
-  "24": ["cable rg"],
   "25": ["telephone cord", "telephone flat cable"],
   "26": ["telephone plug", "telephone line splitter"],
   "27": ["cable vga"],
@@ -1106,16 +1103,14 @@ function mapSupabaseProduct(row: SupabaseProductRow): CatalogProduct {
   };
 }
 
-function applySupabaseTitleSubcategoryOverride(
+function applySupabaseSubcategoryContext(
   products: CatalogProduct[],
   mapping: ReturnType<typeof findDatabaseSubcategory>,
-  terms: string[],
 ) {
   if (!mapping) {
     return products;
   }
 
-  const normalizedTerms = terms.map((term) => term.toLowerCase());
   const category: CatalogCategory = {
     id: mapping.category.categoryId,
     name: mapping.category.name,
@@ -1148,21 +1143,31 @@ function applySupabaseTitleSubcategoryOverride(
     seoDescription: `${mapping.subcategory.name} products in ${mapping.category.name} available from RF Telecom LB in Lebanon.`,
   };
 
-  return products
-    .filter((product) => normalizedTerms.some((term) => product.name.toLowerCase().includes(term)))
-    .map((product) => ({
-      ...product,
-      category,
-      subcategory,
-      collection: category.name,
-      collectionHandle: subcategory.collectionHandle,
-      collectionSlug: subcategory.slug,
-      specifications: {
-        ...product.specifications,
-        Category: category.name,
-        Subcategory: subcategory.name,
-      },
-    }));
+  return products.map((product) => ({
+    ...product,
+    category,
+    subcategory,
+    collection: category.name,
+    collectionHandle: subcategory.collectionHandle,
+    collectionSlug: subcategory.slug,
+    specifications: {
+      ...product.specifications,
+      Category: category.name,
+      Subcategory: subcategory.name,
+    },
+  }));
+}
+
+function applySupabaseTitleSubcategoryOverride(
+  products: CatalogProduct[],
+  mapping: ReturnType<typeof findDatabaseSubcategory>,
+  terms: string[],
+) {
+  const normalizedTerms = terms.map((term) => term.toLowerCase());
+  return applySupabaseSubcategoryContext(
+    products.filter((product) => normalizedTerms.some((term) => product.name.toLowerCase().includes(term))),
+    mapping,
+  );
 }
 
 function rowMatchesCategory(row: ProductCatalogItem, value?: string) {
@@ -1296,6 +1301,8 @@ async function fetchSupabaseProducts(options: ProductListOptions = {}) {
 
   if (titleOverrideTerms) {
     products = applySupabaseTitleSubcategoryOverride(products, subcategoryMapping, titleOverrideTerms);
+  } else if (subcategoryId && subcategoryMapping) {
+    products = applySupabaseSubcategoryContext(products, subcategoryMapping);
   }
 
   if (!titleOverrideTerms && categoryMapping) {
@@ -1628,6 +1635,10 @@ export async function getProducts(options: ProductListOptions = {}) {
   const supabaseProducts = await fetchSupabaseProducts(options);
   if (supabaseProducts.length) {
     return supabaseProducts;
+  }
+
+  if (options.subcategoryId || options.subcategorySlug || options.collectionSlug) {
+    return [];
   }
 
   const rows = await fetchAllCatalogRows();

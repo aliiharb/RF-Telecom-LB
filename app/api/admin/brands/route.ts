@@ -1,44 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { POST } from "@/app/api/admin/catalog/brands/route";
 import { requireAdminApi } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { slugify } from "@/lib/site";
+import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   const auth = await requireAdminApi();
-  if (auth.response) {
-    return auth.response;
-  }
-
-  const brands = await prisma.brand.findMany({ orderBy: [{ displayOrder: "asc" }, { name: "asc" }] });
-  return NextResponse.json({ brands });
+  if (auth.response) return auth.response;
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase.from("brands").select("*").order("name", { ascending: true });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ brands: data || [] });
 }
 
-export async function POST(request: NextRequest) {
-  const auth = await requireAdminApi();
-  if (auth.response) {
-    return auth.response;
-  }
-
-  const body = await request.json();
-  const name = String(body.name || "").trim();
-
-  if (!name) {
-    return NextResponse.json({ error: "Brand name is required" }, { status: 400 });
-  }
-
-  const brand = await prisma.brand.create({
-    data: {
-      name,
-      slug: slugify(String(body.slug || name)),
-      logoUrl: body.logoUrl || null,
-      description: body.description || null,
-      seoTitle: body.seoTitle || null,
-      seoDescription: body.seoDescription || null,
-      displayOrder: Number(body.displayOrder || 0),
-    },
-  });
-
-  return NextResponse.json({ brand }, { status: 201 });
-}
+export { POST };

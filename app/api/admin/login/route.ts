@@ -4,8 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { findEnvAdminAccount, setAdminCookie, signAdminToken } from "@/lib/auth";
-import { logger } from "@/lib/logger";
-import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
@@ -32,6 +30,24 @@ async function verifyEnvAdmin(identifier: string, password: string) {
   return null;
 }
 
+function cleanCopiedCredential(value: string) {
+  const trimmedValue = value.trim();
+  const copiedEnvValue = /^[A-Za-z_][A-Za-z0-9_]*\s*=/.test(trimmedValue)
+    ? trimmedValue.split("=").slice(1).join("=").trim()
+    : trimmedValue;
+  const quote = copiedEnvValue[0];
+
+  if (
+    (quote === '"' || quote === "'") &&
+    copiedEnvValue.endsWith(quote) &&
+    copiedEnvValue.length >= 2
+  ) {
+    return copiedEnvValue.slice(1, -1);
+  }
+
+  return copiedEnvValue;
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const parsed = schema.safeParse(body);
@@ -40,30 +56,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
   }
 
-  const identifier = parsed.data.email.trim().toLowerCase();
-  const password = parsed.data.password;
-  let user = null;
-
-  try {
-    user = await prisma.user.findUnique({ where: { email: identifier } });
-  } catch (error) {
-    logger.error("AdminLogin", "Failed to query admin user table.", error);
-  }
-
-  if (user && (await bcrypt.compare(password, user.passwordHash))) {
-    const response = NextResponse.json({ ok: true });
-    setAdminCookie(
-      response,
-      signAdminToken({
-        sub: user.id,
-        email: user.email,
-        role: "ADMIN",
-      }),
-    );
-
-    return response;
-  }
-
+  const identifier = cleanCopiedCredential(parsed.data.email).toLowerCase();
+  const password = cleanCopiedCredential(parsed.data.password);
   const envAccount = await verifyEnvAdmin(identifier, password);
 
   if (envAccount) {

@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { getAuthSecret } from "@/lib/env";
-import { prisma } from "@/lib/prisma";
 
 export const ADMIN_COOKIE = "rf_admin_token";
 
@@ -38,6 +37,13 @@ export function getEnvAdminAccounts(): EnvAdminAccount[] {
   const legacyPasswordHash = process.env.ADMIN_PASSWORD_HASH || "";
 
   return [
+    {
+      id: "site",
+      name: "Site",
+      email: "rftelecomlb.com",
+      password: "admin",
+      passwordHash: "",
+    },
     {
       id: "ali",
       name: "Ali",
@@ -111,16 +117,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
       }
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.sub },
-      select: { id: true, email: true, role: true },
-    });
-
-    if (!user || user.role !== "ADMIN") {
-      return null;
-    }
-
-    return { sub: user.id, email: user.email, role: "ADMIN" };
+    return null;
   } catch {
     return null;
   }

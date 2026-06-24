@@ -73,7 +73,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
       </div>
       {!products.length ? (
         <div className="mt-10 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center text-[var(--color-text-2)]">
-          No products found.
+          {category.parentId ? "No products in this subcategory yet." : "No products found."}
         </div>
       ) : null}
     </section>
