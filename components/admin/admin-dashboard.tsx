@@ -40,14 +40,39 @@ const managementLinks = [
 ];
 
 export async function AdminDashboard() {
-  const supabase = getSupabaseAdminClient();
-  const [{ products, categories, brands }, taxonomy, brandRows, imageCount, linkCount] = await Promise.all([
-    listAdminProducts(),
-    getAdminProductTaxonomy(),
-    listAdminBrands(),
-    supabase.from("product_images").select("*", { count: "exact", head: true }),
-    supabase.from("product_subcategories").select("*", { count: "exact", head: true }),
-  ]);
+  let products: Awaited<ReturnType<typeof listAdminProducts>>["products"] = [];
+  let categories: Awaited<ReturnType<typeof listAdminProducts>>["categories"] = [];
+  let brands: Awaited<ReturnType<typeof listAdminProducts>>["brands"] = [];
+  let taxonomy: Awaited<ReturnType<typeof getAdminProductTaxonomy>> = [];
+  let brandRows: Awaited<ReturnType<typeof listAdminBrands>> = [];
+  let imageRowCount = 0;
+  let linkRowCount = 0;
+  let loadError: string | null = null;
+
+  try {
+    const supabase = getSupabaseAdminClient();
+    const [productData, taxonomyData, brandData, imageCount, linkCount] = await Promise.all([
+      listAdminProducts(),
+      getAdminProductTaxonomy(),
+      listAdminBrands(),
+      supabase.from("product_images").select("*", { count: "exact", head: true }),
+      supabase.from("product_subcategories").select("*", { count: "exact", head: true }),
+    ]);
+
+    products = productData.products;
+    categories = productData.categories;
+    brands = productData.brands;
+    taxonomy = taxonomyData;
+    brandRows = brandData;
+    imageRowCount = imageCount.count || 0;
+    linkRowCount = linkCount.count || 0;
+
+    if (imageCount.error || linkCount.error) {
+      loadError = imageCount.error?.message || linkCount.error?.message || "Unable to load dashboard counts.";
+    }
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : "Unable to load admin dashboard data.";
+  }
 
   const subcategoryCount = taxonomy.reduce((total, category) => total + category.subcategories.length, 0);
   const activeProducts = products.filter((product) => product.status === "active").length;
@@ -59,6 +84,17 @@ export async function AdminDashboard() {
   return (
     <AdminShell title="Dashboard">
       <div className="grid gap-6">
+        {loadError ? (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950 shadow-sm">
+            <p className="text-sm font-bold uppercase tracking-[0.12em] text-amber-700">Admin data unavailable</p>
+            <h2 className="mt-2 text-lg font-semibold">The dashboard loaded, but Supabase admin data could not be read.</h2>
+            <p className="mt-2 text-sm leading-6">
+              Check that `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set in Netlify, and that the Supabase tables exist.
+            </p>
+            <p className="mt-3 rounded-xl border border-amber-200 bg-white/70 p-3 text-sm font-medium">{loadError}</p>
+          </section>
+        ) : null}
+
         <section className="overflow-hidden rounded-3xl border border-white/80 bg-white shadow-sm">
           <div className="grid gap-6 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.22),transparent_36%),linear-gradient(135deg,#ffffff_0%,#eff6ff_55%,#f5f3ff_100%)] p-6 lg:grid-cols-[1fr_280px] lg:p-8">
             <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
@@ -108,8 +144,8 @@ export async function AdminDashboard() {
           <StatCard label="Products" value={numberFormat.format(products.length)} description={`${activeProducts} active / ${draftProducts} draft / ${archivedProducts} archived`} icon={<PackageCheck size={18} aria-hidden="true" />} tone="sky" />
           <StatCard label="Categories" value={numberFormat.format(categories.length)} description={`${numberFormat.format(subcategoryCount)} subcategories`} icon={<FolderTree size={18} aria-hidden="true" />} tone="emerald" />
           <StatCard label="Brands" value={numberFormat.format(brands.length)} description={`${numberFormat.format(featuredBrands)} Supabase brand records`} icon={<Tags size={18} aria-hidden="true" />} tone="violet" />
-          <StatCard label="Images" value={numberFormat.format(imageCount.count || 0)} description="Rows in product_images" icon={<Building2 size={18} aria-hidden="true" />} tone="slate" />
-          <StatCard label="Product Links" value={numberFormat.format(linkCount.count || 0)} description="Rows in product_subcategories" icon={<Boxes size={18} aria-hidden="true" />} tone="amber" />
+          <StatCard label="Images" value={numberFormat.format(imageRowCount)} description="Rows in product_images" icon={<Building2 size={18} aria-hidden="true" />} tone="slate" />
+          <StatCard label="Product Links" value={numberFormat.format(linkRowCount)} description="Rows in product_subcategories" icon={<Boxes size={18} aria-hidden="true" />} tone="amber" />
           <StatCard label="Visitors" value="Pending" description="Supabase tracking not connected yet" icon={<Users size={18} aria-hidden="true" />} tone="rose" />
           <StatCard label="WhatsApp Orders" value="Pending" description="Supabase orders not connected yet" icon={<MessageSquareText size={18} aria-hidden="true" />} tone="emerald" />
           <StatCard label="Catalog Source" value="Supabase" description="New schema only" icon={<Building2 size={18} aria-hidden="true" />} tone="sky" />
