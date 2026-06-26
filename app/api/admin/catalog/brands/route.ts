@@ -20,6 +20,6 @@ export async function POST(request: NextRequest) {
     .insert({ name, slug, description: body.description?.trim() || null, featured: body.featured !== false })
     .select("*")
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Unable to create brand." }, { status: 500 });
   return NextResponse.json({ brand: data }, { status: 201 });
 }

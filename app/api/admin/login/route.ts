@@ -12,6 +12,14 @@ const schema = z.object({
   password: z.string().min(1),
 });
 
+async function readJson(request: NextRequest) {
+  try {
+    return await request.json();
+  } catch {
+    return null;
+  }
+}
+
 async function verifyEnvAdmin(identifier: string, password: string) {
   const account = findEnvAdminAccount(identifier);
 
@@ -49,7 +57,7 @@ function cleanCopiedCredential(value: string) {
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  const body = await readJson(request);
   const parsed = schema.safeParse(body);
 
   if (!parsed.success) {

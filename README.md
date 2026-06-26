@@ -42,23 +42,37 @@ Copy-Item .env.example .env
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/rftelecomlb?sslmode=require"
 AUTH_SECRET="replace-with-a-long-random-secret"
 JWT_SECRET="replace-with-a-long-random-secret"
-WHATSAPP_ORDER_NUMBER="9611271999"
-NEXT_PUBLIC_STORE_WHATSAPP="9611271999"
+WHATSAPP_ORDER_NUMBER="COUNTRY_CODE_AND_NUMBER"
+NEXT_PUBLIC_STORE_WHATSAPP="COUNTRY_CODE_AND_NUMBER"
 SITE_URL="http://localhost:3000"
 ```
 
 4. Set admin accounts:
 
 ```bash
-ADMIN_EMAIL="admin@rftelecomlb.com"
-ADMIN_PASSWORD="admin"
-ADMIN_ALI_EMAIL="ali@rftelecomlb.com"
-ADMIN_ALI_PASSWORD="admin"
-ADMIN_ZAHRAA_EMAIL="zahraa@rftelecomlb.com"
-ADMIN_ZAHRAA_PASSWORD="admin"
+ADMIN_EMAIL="admin@example.com"
+ADMIN_PASSWORD="local-dev-password"
+ADMIN_ALI_EMAIL="user-one@example.com"
+ADMIN_ALI_PASSWORD="local-dev-password"
+ADMIN_ZAHRAA_EMAIL="user-two@example.com"
+ADMIN_ZAHRAA_PASSWORD="local-dev-password"
 ```
 
-For production, use strong passwords or bcrypt hashes.
+Plaintext admin passwords are for local development only. In production, set bcrypt hashes instead:
+
+```bash
+ADMIN_PASSWORD_HASH="$2b$..."
+ADMIN_ALI_PASSWORD_HASH="$2b$..."
+ADMIN_ZAHRAA_PASSWORD_HASH="$2b$..."
+```
+
+Generate a hash with:
+
+```bash
+node -e "const bcrypt=require('bcryptjs'); console.log(bcrypt.hashSync(process.argv[1], 12));" "your-password"
+```
+
+Production also requires `DATABASE_URL` and either `AUTH_SECRET` or `JWT_SECRET`; the app will fail fast if they are missing.
 
 5. Apply and seed the database:
 
@@ -88,8 +102,8 @@ Open `http://localhost:3000`.
 
 Configured admin shortcuts:
 
-- `ali` or `ali@rftelecomlb.com`
-- `zahraa` or `zahraa@rftelecomlb.com`
+- `user-one` or `user-one@example.com`
+- `user-two` or `user-two@example.com`
 
 ## WhatsApp Ordering
 
@@ -102,10 +116,12 @@ XX XXX XXX
 Orders are sent to:
 
 ```text
-+961 1 271 999
+Your configured WhatsApp order number
 ```
 
 The app also attempts to save each WhatsApp redirect as a `WhatsAppOrder` record for admin tracking.
+
+Order submissions are size-limited before the WhatsApp URL is generated: up to 25 line items, bounded customer fields, and bounded notes.
 
 ## Common Commands
 
@@ -121,5 +137,5 @@ npm run prisma:seed
 ## Notes
 
 - Do not commit `.env`.
-- Uploaded product images are stored under `public/uploads/products`.
+- Admin uploads accept up to 10 files at a time. Images must be JPG, PNG, or WebP and 5 MB or smaller; PDF spec sheets must be 20 MB or smaller.
 - The app can read catalog data from Prisma or Supabase fallback sources.

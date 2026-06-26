@@ -25,7 +25,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     .eq("id", Number(id))
     .select("*")
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Unable to update brand." }, { status: 500 });
   return NextResponse.json({ brand: data });
 }
 
@@ -35,6 +35,6 @@ export async function DELETE(_: Request, context: { params: Promise<{ id: string
   const { id } = await context.params;
   const supabase = getSupabaseAdminClient();
   const { error } = await supabase.from("brands").delete().eq("id", Number(id));
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Unable to delete brand." }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

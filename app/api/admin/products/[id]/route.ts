@@ -123,7 +123,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     return NextResponse.json({ product: result.product });
   } catch (error) {
     logger.error("AdminProducts", "Failed to update product.", error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to update product." }, { status: 500 });
+    return NextResponse.json({ error: "Unable to update product." }, { status: 500 });
   }
 }
 
@@ -139,6 +139,6 @@ export async function DELETE(_: NextRequest, context: { params: Promise<{ id: st
     return NextResponse.json({ ok: true });
   } catch (error) {
     logger.error("AdminProducts", "Failed to delete product.", error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to delete product." }, { status: 500 });
+    return NextResponse.json({ error: "Unable to delete product." }, { status: 500 });
   }
 }

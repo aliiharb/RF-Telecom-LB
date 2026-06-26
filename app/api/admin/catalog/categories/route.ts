@@ -10,7 +10,7 @@ export async function GET() {
   if (auth.response) return auth.response;
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase.from("categories").select("id,name,slug").order("id", { ascending: true });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Unable to load categories." }, { status: 500 });
   return NextResponse.json({ categories: data || [] });
 }
 
@@ -28,6 +28,6 @@ export async function POST(request: NextRequest) {
   if (maxError) throw maxError;
   const id = ((maxRows?.[0]?.id as number | undefined) || 0) + 1;
   const { data, error } = await supabase.from("categories").insert({ id, name, slug }).select("*").single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Unable to create category." }, { status: 500 });
   return NextResponse.json({ category: data }, { status: 201 });
 }

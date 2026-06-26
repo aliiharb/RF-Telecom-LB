@@ -10,7 +10,7 @@ export async function GET() {
   if (auth.response) return auth.response;
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase.from("brands").select("*").order("name", { ascending: true });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Unable to load brands." }, { status: 500 });
   return NextResponse.json({ brands: data || [] });
 }
 

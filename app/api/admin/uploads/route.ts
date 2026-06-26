@@ -6,13 +6,19 @@ import { slugify } from "@/lib/site";
 
 export const runtime = "nodejs";
 
+const MAX_UPLOAD_FILES = 10;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_PDF_BYTES = 20 * 1024 * 1024;
+
+const IMAGE_EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
 function extensionFor(file: File) {
-  const nameExtension = file.name.split(".").pop();
-  if (nameExtension) return nameExtension.toLowerCase();
   if (file.type === "application/pdf") return "pdf";
-  if (file.type === "image/png") return "png";
-  if (file.type === "image/webp") return "webp";
-  return "jpg";
+  return IMAGE_EXTENSIONS[file.type] || "jpg";
 }
 
 export async function POST(request: NextRequest) {
@@ -29,12 +35,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No files uploaded." }, { status: 400 });
     }
 
+    if (files.length > MAX_UPLOAD_FILES) {
+      return NextResponse.json({ error: `Upload up to ${MAX_UPLOAD_FILES} files at a time.` }, { status: 400 });
+    }
+
     if (kind === "pdf" && files.some((file) => file.type !== "application/pdf")) {
       return NextResponse.json({ error: "Spec sheet must be a PDF." }, { status: 400 });
     }
 
-    if (kind === "images" && files.some((file) => !file.type.startsWith("image/"))) {
-      return NextResponse.json({ error: "Images upload only accepts image files." }, { status: 400 });
+    if (kind === "images" && files.some((file) => !(file.type in IMAGE_EXTENSIONS))) {
+      return NextResponse.json({ error: "Images upload only accepts JPG, PNG, or WebP files." }, { status: 400 });
+    }
+
+    if (kind !== "pdf" && kind !== "images") {
+      return NextResponse.json({ error: "Invalid upload type." }, { status: 400 });
+    }
+
+    const maxBytes = kind === "pdf" ? MAX_PDF_BYTES : MAX_IMAGE_BYTES;
+    if (files.some((file) => file.size > maxBytes)) {
+      return NextResponse.json({ error: "One or more files exceed the upload size limit." }, { status: 400 });
     }
 
     const bucket = kind === "pdf" ? "product-pdfs" : "product-images";

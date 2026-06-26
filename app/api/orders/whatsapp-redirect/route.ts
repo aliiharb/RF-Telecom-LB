@@ -11,30 +11,45 @@ import {
 
 export const runtime = "nodejs";
 
+const MAX_ORDER_ITEMS = 25;
+const MAX_CUSTOMER_FIELD_LENGTH = 160;
+const MAX_ADDRESS_LENGTH = 500;
+const MAX_NOTES_LENGTH = 1000;
+const MAX_PRODUCT_FIELD_LENGTH = 200;
+
 const orderSchema = z.object({
-  fullName: z.string().min(1),
-  phone: z.string().min(1),
-  address: z.string().min(1),
+  fullName: z.string().trim().min(1).max(MAX_CUSTOMER_FIELD_LENGTH),
+  phone: z.string().trim().min(1).max(40),
+  address: z.string().trim().min(1).max(MAX_ADDRESS_LENGTH),
   deliveryMethod: z.enum(["Delivery", "Pickup"]),
-  notes: z.string().optional().nullable(),
-  sessionId: z.string().optional(),
+  notes: z.string().trim().max(MAX_NOTES_LENGTH).optional().nullable(),
+  sessionId: z.string().trim().max(128).optional(),
   items: z
     .array(
       z.object({
-        name: z.string(),
-        brand: z.string().optional().nullable(),
-        sku: z.string().optional().nullable(),
-        category: z.string().optional().nullable(),
-        quantity: z.number().int().positive(),
-        price: z.number().optional().nullable(),
-        currency: z.string().optional().nullable(),
+        name: z.string().trim().min(1).max(MAX_PRODUCT_FIELD_LENGTH),
+        brand: z.string().trim().max(MAX_PRODUCT_FIELD_LENGTH).optional().nullable(),
+        sku: z.string().trim().max(MAX_PRODUCT_FIELD_LENGTH).optional().nullable(),
+        category: z.string().trim().max(MAX_PRODUCT_FIELD_LENGTH).optional().nullable(),
+        quantity: z.number().int().positive().max(999),
+        price: z.number().nonnegative().max(999999999).optional().nullable(),
+        currency: z.string().trim().max(12).optional().nullable(),
       }),
     )
-    .min(1),
+    .min(1)
+    .max(MAX_ORDER_ITEMS),
 });
 
+async function readJson(request: NextRequest) {
+  try {
+    return await request.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
-  const json = await request.json();
+  const json = await readJson(request);
   const parsed = orderSchema.safeParse(json);
 
   if (!parsed.success) {
@@ -80,5 +95,5 @@ export async function POST(request: NextRequest) {
     // WhatsApp redirection remains the source of truth for the shopper flow.
   }
 
-  return NextResponse.json({ whatsappUrl, message });
+  return NextResponse.json({ whatsappUrl });
 }

@@ -555,7 +555,7 @@ function catalogError(message: string, error?: unknown) {
 }
 
 function normalizeSearch(value?: string | null) {
-  return (value || "").trim();
+  return (value || "").trim().slice(0, 200);
 }
 
 function sanitizeLikeTerm(value: string) {

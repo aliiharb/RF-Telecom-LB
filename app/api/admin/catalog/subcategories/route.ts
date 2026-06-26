@@ -24,6 +24,6 @@ export async function POST(request: NextRequest) {
   }, 0);
   const id = `${categoryId}_${maxSuffix + 1}`;
   const { data, error } = await supabase.from("subcategories").insert({ id, category_id: categoryId, name, slug }).select("*").single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Unable to create subcategory." }, { status: 500 });
   return NextResponse.json({ subcategory: data }, { status: 201 });
 }

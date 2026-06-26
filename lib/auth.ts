@@ -32,32 +32,38 @@ export type EnvAdminAccount = {
   aliases?: string[];
 };
 
+function allowPlaintextAdminPasswords() {
+  return process.env.NODE_ENV !== "production";
+}
+
 export function getEnvAdminAccounts(): EnvAdminAccount[] {
   const legacyEmail = getEnvAdminEmail();
-  const legacyPassword = process.env.ADMIN_PASSWORD || "";
+  const legacyPassword = allowPlaintextAdminPasswords() ? process.env.ADMIN_PASSWORD || "" : "";
   const legacyPasswordHash = process.env.ADMIN_PASSWORD_HASH || "";
 
   return [
-    {
-      id: "site",
-      name: "Site",
-      email: "rftelecomlb.com",
-      password: "admin",
-      passwordHash: "",
-      aliases: ["admin"],
-    },
+    allowPlaintextAdminPasswords()
+      ? {
+          id: "site",
+          name: "Site",
+          email: "rftelecomlb.com",
+          password: "admin",
+          passwordHash: "",
+          aliases: ["admin"],
+        }
+      : null,
     {
       id: "ali",
       name: "Ali",
       email: normalizeEmail(process.env.ADMIN_ALI_EMAIL || "ali@rftelecomlb.com"),
-      password: process.env.ADMIN_ALI_PASSWORD || legacyPassword,
+      password: allowPlaintextAdminPasswords() ? process.env.ADMIN_ALI_PASSWORD || legacyPassword : "",
       passwordHash: process.env.ADMIN_ALI_PASSWORD_HASH || "",
     },
     {
       id: "zahraa",
       name: "Zahraa",
       email: normalizeEmail(process.env.ADMIN_ZAHRAA_EMAIL || "zahraa@rftelecomlb.com"),
-      password: process.env.ADMIN_ZAHRAA_PASSWORD || legacyPassword,
+      password: allowPlaintextAdminPasswords() ? process.env.ADMIN_ZAHRAA_PASSWORD || legacyPassword : "",
       passwordHash: process.env.ADMIN_ZAHRAA_PASSWORD_HASH || "",
     },
     legacyEmail

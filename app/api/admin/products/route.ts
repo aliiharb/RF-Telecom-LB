@@ -115,6 +115,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ product: result.product }, { status: 201 });
   } catch (error) {
     logger.error("AdminProducts", "Failed to create product.", error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to create product." }, { status: 500 });
+    return NextResponse.json({ error: "Unable to create product." }, { status: 500 });
   }
 }

@@ -3,6 +3,15 @@ import { getProducts } from "@/lib/catalog";
 
 export const runtime = "nodejs";
 
+const MAX_TAKE = 100;
+
+function parseTake(value: string | null) {
+  if (!value) return undefined;
+  const take = Number(value);
+  if (!Number.isFinite(take) || take <= 0) return undefined;
+  return Math.min(Math.floor(take), MAX_TAKE);
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const products = await getProducts({
@@ -16,7 +25,7 @@ export async function GET(request: NextRequest) {
     minPrice: searchParams.get("minPrice") || undefined,
     maxPrice: searchParams.get("maxPrice") || undefined,
     sort: searchParams.get("sort") || undefined,
-    take: searchParams.get("take") ? Number(searchParams.get("take")) : undefined,
+    take: parseTake(searchParams.get("take")),
   });
 
   return NextResponse.json({ products, total: products.length });

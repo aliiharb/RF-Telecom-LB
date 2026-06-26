@@ -14,6 +14,23 @@ export type VisitorPayload = {
   userAgent?: string;
 };
 
+function boundedString(value: unknown, maxLength: number) {
+  return typeof value === "string" ? value.trim().slice(0, maxLength) : undefined;
+}
+
+export function sanitizeVisitorPayload(payload: VisitorPayload = {}): VisitorPayload {
+  return {
+    sessionId: boundedString(payload.sessionId, 128),
+    path: boundedString(payload.path, 500),
+    title: boundedString(payload.title, 300),
+    referrer: boundedString(payload.referrer, 1000),
+    utmSource: boundedString(payload.utmSource, 120),
+    utmMedium: boundedString(payload.utmMedium, 120),
+    utmCampaign: boundedString(payload.utmCampaign, 200),
+    userAgent: boundedString(payload.userAgent, 1000),
+  };
+}
+
 function parseUserAgent(userAgent = "") {
   const browser = userAgent.includes("Edg")
     ? "Edge"
@@ -64,19 +81,20 @@ export function fallbackSessionId(input?: string) {
 }
 
 export async function getOrCreateVisitor(request: NextRequest, payload: VisitorPayload = {}) {
-  const userAgent = payload.userAgent || request.headers.get("user-agent") || "";
+  const safePayload = sanitizeVisitorPayload(payload);
+  const userAgent = safePayload.userAgent || boundedString(request.headers.get("user-agent"), 1000) || "";
   const parsed = parseUserAgent(userAgent);
-  const sessionId = fallbackSessionId(payload.sessionId);
+  const sessionId = fallbackSessionId(safePayload.sessionId);
 
   return prisma.visitor.upsert({
     where: { sessionId },
     create: {
       sessionId,
       ipHash: hashIp(getIp(request)),
-      referrer: payload.referrer,
-      utmSource: payload.utmSource,
-      utmMedium: payload.utmMedium,
-      utmCampaign: payload.utmCampaign,
+      referrer: safePayload.referrer,
+      utmSource: safePayload.utmSource,
+      utmMedium: safePayload.utmMedium,
+      utmCampaign: safePayload.utmCampaign,
       browser: parsed.browser,
       deviceType: parsed.deviceType,
       operatingSystem: parsed.operatingSystem,
@@ -85,10 +103,10 @@ export async function getOrCreateVisitor(request: NextRequest, payload: VisitorP
     },
     update: {
       lastVisitAt: new Date(),
-      referrer: payload.referrer || undefined,
-      utmSource: payload.utmSource || undefined,
-      utmMedium: payload.utmMedium || undefined,
-      utmCampaign: payload.utmCampaign || undefined,
+      referrer: safePayload.referrer || undefined,
+      utmSource: safePayload.utmSource || undefined,
+      utmMedium: safePayload.utmMedium || undefined,
+      utmCampaign: safePayload.utmCampaign || undefined,
       browser: parsed.browser,
       deviceType: parsed.deviceType,
       operatingSystem: parsed.operatingSystem,

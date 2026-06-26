@@ -15,7 +15,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
   if (!name || !slug) return NextResponse.json({ error: "Category name is required." }, { status: 400 });
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase.from("categories").update({ name, slug }).eq("id", Number(id)).select("*").single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Unable to update category." }, { status: 500 });
   return NextResponse.json({ category: data });
 }
 
@@ -30,7 +30,7 @@ export async function DELETE(_: Request, context: { params: Promise<{ id: string
     .from("subcategories")
     .select("id")
     .eq("category_id", categoryId);
-  if (subcategoryError) return NextResponse.json({ error: subcategoryError.message }, { status: 500 });
+  if (subcategoryError) return NextResponse.json({ error: "Unable to load subcategories." }, { status: 500 });
 
   const subcategoryIds = (subcategories || []).map((subcategory) => String(subcategory.id));
 
@@ -39,16 +39,16 @@ export async function DELETE(_: Request, context: { params: Promise<{ id: string
       .from("product_subcategories")
       .delete()
       .in("subcategory_id", subcategoryIds);
-    if (linkError) return NextResponse.json({ error: linkError.message }, { status: 500 });
+    if (linkError) return NextResponse.json({ error: "Unable to delete category links." }, { status: 500 });
 
     const { error: deleteSubcategoriesError } = await supabase
       .from("subcategories")
       .delete()
       .eq("category_id", categoryId);
-    if (deleteSubcategoriesError) return NextResponse.json({ error: deleteSubcategoriesError.message }, { status: 500 });
+    if (deleteSubcategoriesError) return NextResponse.json({ error: "Unable to delete subcategories." }, { status: 500 });
   }
 
   const { error } = await supabase.from("categories").delete().eq("id", categoryId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Unable to delete category." }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

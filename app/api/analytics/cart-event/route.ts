@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getOrCreateVisitor } from "@/lib/analytics";
 import { prisma } from "@/lib/prisma";
 
@@ -19,21 +20,30 @@ const eventTypes: CartEventTypeValue[] = [
   "WHATSAPP_REDIRECT_CLICKED",
 ];
 
-function isCartEventType(value: string): value is CartEventTypeValue {
-  return eventTypes.includes(value as CartEventTypeValue);
-}
+const cartEventSchema = z.object({
+  eventType: z.enum(eventTypes as [CartEventTypeValue, ...CartEventTypeValue[]]),
+  sessionId: z.string().trim().max(128).optional(),
+  referrer: z.string().trim().max(1000).optional(),
+  utmSource: z.string().trim().max(120).optional(),
+  utmMedium: z.string().trim().max(120).optional(),
+  utmCampaign: z.string().trim().max(200).optional(),
+  productId: z.string().trim().max(128).optional(),
+  productName: z.string().trim().max(200).optional(),
+  quantity: z.number().int().positive().max(999).optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const eventType = String(body.eventType || "");
+    const parsed = cartEventSchema.safeParse(body);
 
-    if (!isCartEventType(eventType)) {
+    if (!parsed.success) {
       return NextResponse.json({ ok: true });
     }
 
-    const visitor = await getOrCreateVisitor(request, body);
-    const productId = typeof body.productId === "string" ? body.productId : undefined;
+    const data = parsed.data;
+    const visitor = await getOrCreateVisitor(request, data);
+    const productId = data.productId;
     const product = productId
       ? await prisma.product.findUnique({ where: { id: productId }, select: { id: true } })
       : null;
@@ -42,10 +52,14 @@ export async function POST(request: NextRequest) {
       data: {
         visitorId: visitor.id,
         productId: product?.id,
-        productName: typeof body.productName === "string" ? body.productName : null,
-        eventType,
-        quantity: typeof body.quantity === "number" ? body.quantity : null,
-        metadata: body,
+        productName: data.productName || null,
+        eventType: data.eventType,
+        quantity: data.quantity || null,
+        metadata: {
+          productId: data.productId,
+          productName: data.productName,
+          quantity: data.quantity,
+        },
       },
     });
 

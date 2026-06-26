@@ -12,10 +12,10 @@ export async function DELETE(_: Request, context: { params: Promise<{ id: string
   const supabase = getSupabaseAdminClient();
 
   const { error: linkError } = await supabase.from("product_subcategories").delete().eq("subcategory_id", id);
-  if (linkError) return NextResponse.json({ error: linkError.message }, { status: 500 });
+  if (linkError) return NextResponse.json({ error: "Unable to delete subcategory links." }, { status: 500 });
 
   const { error } = await supabase.from("subcategories").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Unable to delete subcategory." }, { status: 500 });
 
   return NextResponse.json({ ok: true });
 }
