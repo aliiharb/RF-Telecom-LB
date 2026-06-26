@@ -39,23 +39,16 @@ Copy-Item .env.example .env
 3. Update `.env`:
 
 ```bash
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/rftelecomlb?sslmode=require"
-AUTH_SECRET="replace-with-a-long-random-secret"
-JWT_SECRET="replace-with-a-long-random-secret"
-WHATSAPP_ORDER_NUMBER="COUNTRY_CODE_AND_NUMBER"
-NEXT_PUBLIC_STORE_WHATSAPP="COUNTRY_CODE_AND_NUMBER"
-SITE_URL="http://localhost:3000"
+DATABASE_URL=
+WHATSAPP_ORDER_NUMBER=
+NEXT_PUBLIC_STORE_WHATSAPP=
+SITE_URL=
 ```
 
 4. Set admin accounts:
 
 ```bash
-ADMIN_EMAIL="admin@example.com"
-ADMIN_PASSWORD="local-dev-password"
-ADMIN_ALI_EMAIL="user-one@example.com"
-ADMIN_ALI_PASSWORD="local-dev-password"
-ADMIN_ZAHRAA_EMAIL="user-two@example.com"
-ADMIN_ZAHRAA_PASSWORD="local-dev-password"
+
 ```
 
 Plaintext admin passwords are for local development only. In production, set bcrypt hashes instead:
