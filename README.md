@@ -45,6 +45,15 @@ NEXT_PUBLIC_STORE_WHATSAPP=
 SITE_URL=
 ```
 
+Supabase-backed admin catalog pages also require these server-side values:
+
+```bash
+SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="YOUR_SUPABASE_SERVICE_ROLE_KEY"
+```
+
+On Netlify, add both under Site configuration > Environment variables for the production deploy context, then trigger a new deploy. Keep `SUPABASE_SERVICE_ROLE_KEY` server-only; do not expose it with a `NEXT_PUBLIC_` or `VITE_` prefix.
+
 4. Set admin accounts:
 
 ```bash

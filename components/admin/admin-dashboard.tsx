@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import type { ReactNode } from "react";
 import {
   ArrowRight,
@@ -40,6 +41,8 @@ const managementLinks = [
 ];
 
 export async function AdminDashboard() {
+  await connection();
+
   let products: Awaited<ReturnType<typeof listAdminProducts>>["products"] = [];
   let categories: Awaited<ReturnType<typeof listAdminProducts>>["categories"] = [];
   let brands: Awaited<ReturnType<typeof listAdminProducts>>["brands"] = [];
@@ -89,7 +92,8 @@ export async function AdminDashboard() {
             <p className="text-sm font-bold uppercase tracking-[0.12em] text-amber-700">Admin data unavailable</p>
             <h2 className="mt-2 text-lg font-semibold">The dashboard loaded, but Supabase admin data could not be read.</h2>
             <p className="mt-2 text-sm leading-6">
-              Check that `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set in Netlify, and that the Supabase tables exist.
+              Check that `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set for the Netlify deploy context, then
+              redeploy. If both variables are present, confirm that the Supabase tables exist.
             </p>
             <p className="mt-3 rounded-xl border border-amber-200 bg-white/70 p-3 text-sm font-medium">{loadError}</p>
           </section>

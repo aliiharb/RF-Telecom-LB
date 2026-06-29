@@ -31,10 +31,6 @@ async function verifyEnvAdmin(identifier: string, password: string) {
     return account;
   }
 
-  if (account.password && password === account.password) {
-    return account;
-  }
-
   return null;
 }
 

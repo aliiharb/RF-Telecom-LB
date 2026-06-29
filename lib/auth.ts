@@ -27,43 +27,45 @@ export type EnvAdminAccount = {
   id: string;
   name: string;
   email: string;
-  password: string;
   passwordHash: string;
   aliases?: string[];
 };
 
-function allowPlaintextAdminPasswords() {
-  return process.env.NODE_ENV !== "production";
+function getConfiguredAdminIdentifier() {
+  return normalizeEmail(process.env.ADMIN_USERNAME || process.env.ADMIN_EMAIL);
+}
+
+function assertProductionAdminEnv() {
+  if (process.env.NODE_ENV !== "production") {
+    return;
+  }
+
+  if (!process.env.ADMIN_USERNAME) {
+    throw new Error("ADMIN_USERNAME must be set in production.");
+  }
+
+  if (!process.env.ADMIN_PASSWORD_HASH) {
+    throw new Error("ADMIN_PASSWORD_HASH must be set in production.");
+  }
 }
 
 export function getEnvAdminAccounts(): EnvAdminAccount[] {
-  const legacyEmail = getEnvAdminEmail();
-  const legacyPassword = allowPlaintextAdminPasswords() ? process.env.ADMIN_PASSWORD || "" : "";
+  assertProductionAdminEnv();
+
+  const legacyEmail = getConfiguredAdminIdentifier();
   const legacyPasswordHash = process.env.ADMIN_PASSWORD_HASH || "";
 
   return [
-    allowPlaintextAdminPasswords()
-      ? {
-          id: "site",
-          name: "Site",
-          email: "rftelecomlb.com",
-          password: "admin",
-          passwordHash: "",
-          aliases: ["admin"],
-        }
-      : null,
     {
       id: "ali",
       name: "Ali",
-      email: normalizeEmail(process.env.ADMIN_ALI_EMAIL || "ali@rftelecomlb.com"),
-      password: allowPlaintextAdminPasswords() ? process.env.ADMIN_ALI_PASSWORD || legacyPassword : "",
+      email: normalizeEmail(process.env.ADMIN_ALI_EMAIL),
       passwordHash: process.env.ADMIN_ALI_PASSWORD_HASH || "",
     },
     {
       id: "zahraa",
       name: "Zahraa",
-      email: normalizeEmail(process.env.ADMIN_ZAHRAA_EMAIL || "zahraa@rftelecomlb.com"),
-      password: allowPlaintextAdminPasswords() ? process.env.ADMIN_ZAHRAA_PASSWORD || legacyPassword : "",
+      email: normalizeEmail(process.env.ADMIN_ZAHRAA_EMAIL),
       passwordHash: process.env.ADMIN_ZAHRAA_PASSWORD_HASH || "",
     },
     legacyEmail
@@ -71,7 +73,6 @@ export function getEnvAdminAccounts(): EnvAdminAccount[] {
           id: "main",
           name: "Admin",
           email: legacyEmail,
-          password: legacyPassword,
           passwordHash: legacyPasswordHash,
         }
       : null,

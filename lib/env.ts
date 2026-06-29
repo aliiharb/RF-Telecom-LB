@@ -7,13 +7,20 @@ export function getWhatsAppOrderNumber() {
 }
 
 export function getAuthSecret() {
-  const secret = process.env.AUTH_SECRET || process.env.JWT_SECRET;
+  const authSecret = process.env.AUTH_SECRET;
+  const jwtSecret = process.env.JWT_SECRET;
 
-  if (!secret && process.env.NODE_ENV === "production") {
-    throw new Error("AUTH_SECRET or JWT_SECRET must be set in production.");
+  if (process.env.NODE_ENV === "production") {
+    if (!authSecret) {
+      throw new Error("AUTH_SECRET must be set in production.");
+    }
+
+    if (!jwtSecret) {
+      throw new Error("JWT_SECRET must be set in production.");
+    }
   }
 
-  return secret || "development-only-change-this-secret-before-production";
+  return authSecret || jwtSecret || "";
 }
 
 export function getDatabaseUrl() {
@@ -23,5 +30,5 @@ export function getDatabaseUrl() {
     throw new Error("DATABASE_URL must be set in production.");
   }
 
-  return databaseUrl || "postgresql://postgres:postgres@localhost:5432/rftelecomlb?schema=public";
+  return databaseUrl || "";
 }
