@@ -27,9 +27,14 @@ export type EnvAdminAccount = {
   id: string;
   name: string;
   email: string;
+  password: string;
   passwordHash: string;
   aliases?: string[];
 };
+
+function allowPlaintextAdminPasswords() {
+  return process.env.NODE_ENV !== "production";
+}
 
 function getConfiguredAdminIdentifier() {
   return normalizeEmail(process.env.ADMIN_USERNAME || process.env.ADMIN_EMAIL);
@@ -53,6 +58,7 @@ export function getEnvAdminAccounts(): EnvAdminAccount[] {
   assertProductionAdminEnv();
 
   const legacyEmail = getConfiguredAdminIdentifier();
+  const legacyPassword = allowPlaintextAdminPasswords() ? process.env.ADMIN_PASSWORD || "" : "";
   const legacyPasswordHash = process.env.ADMIN_PASSWORD_HASH || "";
 
   return [
@@ -60,12 +66,14 @@ export function getEnvAdminAccounts(): EnvAdminAccount[] {
       id: "ali",
       name: "Ali",
       email: normalizeEmail(process.env.ADMIN_ALI_EMAIL),
+      password: allowPlaintextAdminPasswords() ? process.env.ADMIN_ALI_PASSWORD || legacyPassword : "",
       passwordHash: process.env.ADMIN_ALI_PASSWORD_HASH || "",
     },
     {
       id: "zahraa",
       name: "Zahraa",
       email: normalizeEmail(process.env.ADMIN_ZAHRAA_EMAIL),
+      password: allowPlaintextAdminPasswords() ? process.env.ADMIN_ZAHRAA_PASSWORD || legacyPassword : "",
       passwordHash: process.env.ADMIN_ZAHRAA_PASSWORD_HASH || "",
     },
     legacyEmail
@@ -73,7 +81,9 @@ export function getEnvAdminAccounts(): EnvAdminAccount[] {
           id: "main",
           name: "Admin",
           email: legacyEmail,
+          password: legacyPassword,
           passwordHash: legacyPasswordHash,
+          aliases: ["admin"],
         }
       : null,
   ].filter((account): account is EnvAdminAccount => Boolean(account?.email));
